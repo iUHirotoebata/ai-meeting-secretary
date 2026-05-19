@@ -30,15 +30,17 @@ type FollowUpInputs = Partial<
 type ZoomCreateMeetingResponse = {
   ok: boolean;
   message: string;
-  received?: {
+  meeting?: {
+    id: string;
     topic: string;
-    date: string;
     startTime: string;
-    endTime: string;
-    guestName: string;
-    guestEmail: string;
+    duration: number;
+    timezone: string;
+    joinUrl: string;
   };
 };
+
+type CreatedZoomMeeting = NonNullable<ZoomCreateMeetingResponse["meeting"]>;
 
 const samplePrompt =
   "5月27日 11:00〜11:30、田中さんとZoom。メールは tanaka@example.com";
@@ -130,6 +132,11 @@ function cleanTimeInput(value: string | undefined) {
 }
 
 function extractDate(input: string) {
+  const yearTextMatch = input.match(/(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日/);
+  if (yearTextMatch) {
+    return `${yearTextMatch[1]}年${yearTextMatch[2]}月${yearTextMatch[3]}日`;
+  }
+
   const yearSlashMatch = input.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
   if (yearSlashMatch) {
     return `${yearSlashMatch[1]}年${yearSlashMatch[2]}月${yearSlashMatch[3]}日`;
@@ -242,6 +249,8 @@ export default function Home() {
   const [isZoomReady, setIsZoomReady] = useState(false);
   const [isZoomSubmitting, setIsZoomSubmitting] = useState(false);
   const [zoomErrorMessage, setZoomErrorMessage] = useState("");
+  const [createdZoomMeeting, setCreatedZoomMeeting] =
+    useState<CreatedZoomMeeting | null>(null);
   const [isInvitationEmailReady, setIsInvitationEmailReady] = useState(false);
   const [hasInputChangedAfterConfirmation, setHasInputChangedAfterConfirmation] =
     useState(false);
@@ -269,6 +278,7 @@ export default function Home() {
     setIsZoomReady(false);
     setIsZoomSubmitting(false);
     setZoomErrorMessage("");
+    setCreatedZoomMeeting(null);
     setIsInvitationEmailReady(false);
     setHasInputChangedAfterConfirmation(false);
   };
@@ -278,6 +288,7 @@ export default function Home() {
     setIsZoomReady(false);
     setIsZoomSubmitting(false);
     setZoomErrorMessage("");
+    setCreatedZoomMeeting(null);
     setIsInvitationEmailReady(false);
   };
 
@@ -321,6 +332,7 @@ export default function Home() {
     setIsZoomReady(false);
     setIsZoomSubmitting(false);
     setZoomErrorMessage("");
+    setCreatedZoomMeeting(null);
     setIsInvitationEmailReady(false);
     setHasInputChangedAfterConfirmation(false);
   };
@@ -351,18 +363,20 @@ export default function Home() {
       const data = (await response.json()) as ZoomCreateMeetingResponse;
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.message || "Zoom API接続準備に失敗しました。");
+        throw new Error(data.message || "Zoomミーティング作成に失敗しました。");
       }
 
+      setCreatedZoomMeeting(data.meeting ?? null);
       setIsZoomReady(true);
       handlePrepareInvitationEmail();
     } catch (error) {
       setIsZoomReady(false);
       setIsInvitationEmailReady(false);
+      setCreatedZoomMeeting(null);
       setZoomErrorMessage(
         error instanceof Error
           ? error.message
-          : "Zoom API接続準備に失敗しました。",
+          : "Zoomミーティング作成に失敗しました。",
       );
     } finally {
       setIsZoomSubmitting(false);
@@ -488,6 +502,7 @@ export default function Home() {
           {isZoomReady ? (
             <ExecutionSummarySection
               result={extractionResult}
+              meeting={createdZoomMeeting}
               canConfirmCalendarSync={canConfirmCalendarSync}
               isInvitationEmailReady={isInvitationEmailReady}
               onStartNewSchedule={handleStartNewSchedule}
@@ -560,7 +575,7 @@ function ZoomPreparationPanel({
         disabled={!canCreateZoom || isSubmitting}
         onClick={onCreateZoom}
       >
-        {isSubmitting ? "Zoom API接続準備中..." : "この内容でZoomを作成する"}
+        {isSubmitting ? "Zoomミーティング作成中..." : "この内容でZoomを作成する"}
       </button>
 
       {errorMessage ? (
@@ -597,11 +612,13 @@ function ConfirmationEmptyState({
 
 function ExecutionSummarySection({
   result,
+  meeting,
   canConfirmCalendarSync,
   isInvitationEmailReady,
   onStartNewSchedule,
 }: {
   result: ExtractionResult;
+  meeting: CreatedZoomMeeting | null;
   canConfirmCalendarSync: boolean;
   isInvitationEmailReady: boolean;
   onStartNewSchedule: () => void;
@@ -627,8 +644,8 @@ function ExecutionSummarySection({
 
       <div className="execution-summary-grid">
         <article className="execution-summary-card execution-summary-card-zoom">
-          <h3>Zoom作成準備が完了しました。</h3>
-          <p>次のステップでZoom APIに接続します。</p>
+          <h3>Zoomミーティングを作成しました。</h3>
+          <p>参加URLが発行されました。</p>
           <div className="execution-summary-lines">
             <p>
               <strong>会議</strong>
@@ -643,6 +660,21 @@ function ExecutionSummarySection({
               <span>
                 {details.guestName || "未抽出"} / {details.guestEmail}
               </span>
+            </p>
+            <p>
+              <strong>URL</strong>
+              {meeting?.joinUrl ? (
+                <a
+                  href={meeting.joinUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="execution-summary-link"
+                >
+                  {meeting.joinUrl}
+                </a>
+              ) : (
+                <span>参加URLを取得できませんでした</span>
+              )}
             </p>
           </div>
         </article>
@@ -710,6 +742,12 @@ function ExecutionSummarySection({
               <strong>日時</strong>
               <span>{dateTime}</span>
             </p>
+            {meeting?.joinUrl ? (
+              <p>
+                <strong>Zoom URL</strong>
+                <span>{meeting.joinUrl}</span>
+              </p>
+            ) : null}
           </div>
         </article>
       </div>
