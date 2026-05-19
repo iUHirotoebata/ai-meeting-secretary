@@ -317,10 +317,6 @@ textarea {
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
-.detail-item-wide {
-  grid-column: 1 / -1;
-}
-
 .detail-item dt {
   color: #64748b;
   font-size: 12px;
@@ -332,6 +328,34 @@ textarea {
   color: #0f172a;
   font-size: 14px;
   line-height: 1.45;
+  font-weight: 800;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.detail-memo-card {
+  margin: 10px 0 0;
+}
+
+.detail-memo-card div {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.detail-memo-card dt {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.detail-memo-card dd {
+  margin: 6px 0 0;
+  color: #0f172a;
+  font-size: 14px;
+  line-height: 1.55;
   font-weight: 800;
   overflow-wrap: break-word;
   word-break: normal;

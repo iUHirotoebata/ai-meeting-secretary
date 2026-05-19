@@ -46,7 +46,6 @@ const detailLabels: Array<[keyof MeetingDetails, string]> = [
   ["endTime", "終了時間"],
   ["guestName", "相手の名前"],
   ["guestEmail", "相手のメール"],
-  ["memo", "メモ"],
 ];
 
 const statusCards = [
@@ -144,6 +143,11 @@ function extractDate(input: string) {
   return "";
 }
 
+function extractMemo(input: string) {
+  const memoMatch = input.match(/(?:メモ|備考)\s*(?:は|:|：)\s*(.+)$/);
+  return memoMatch?.[1]?.trim() ?? "";
+}
+
 function extractMeetingDetails(
   input: string,
   followUps: FollowUpInputs = {},
@@ -158,6 +162,7 @@ function extractMeetingDetails(
     normalizedInput.match(/([一-龥ぁ-んァ-ヶーA-Za-z\s]{1,24})(?:様|先生)/);
   const guestName = guestMatch?.[1]?.trim() ?? "";
   const mentionsZoom = /zoom/i.test(normalizedInput);
+  const memo = extractMemo(input);
 
   const followUpStartTime = cleanTimeInput(followUps.startTime);
   const followUpEndTime = cleanTimeInput(followUps.endTime);
@@ -214,7 +219,7 @@ function extractMeetingDetails(
       endTime: finalEndTime || "時間が入っていません",
       guestName,
       guestEmail: finalEmail || "相手メールは不明",
-      memo: input.trim(),
+      memo,
     },
     missingMessages,
     autoMessages,
@@ -420,20 +425,28 @@ function DetailsGrid({
   details: MeetingDetails;
   compact?: boolean;
 }) {
+  const memo = details.memo.trim();
+
   return (
-    <dl className={`details-grid ${compact ? "details-grid-compact" : ""}`}>
-      {detailLabels.map(([key, label]) => (
-        <div
-          key={key}
-          className={`detail-item ${
-            key === "memo" && !compact ? "detail-item-wide" : ""
-          }`}
-        >
-          <dt>{label}</dt>
-          <dd>{details[key] || "未抽出"}</dd>
-        </div>
-      ))}
-    </dl>
+    <>
+      <dl className={`details-grid ${compact ? "details-grid-compact" : ""}`}>
+        {detailLabels.map(([key, label]) => (
+          <div key={key} className="detail-item">
+            <dt>{label}</dt>
+            <dd>{details[key] || "未抽出"}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {memo ? (
+        <dl className="detail-memo-card">
+          <div>
+            <dt>メモ</dt>
+            <dd>{memo}</dd>
+          </div>
+        </dl>
+      ) : null}
+    </>
   );
 }
 
