@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { google } from "googleapis";
 
 type ZoomCreateMeetingRequest = {
   topic?: string;
@@ -20,6 +21,7 @@ type ZoomMeetingResponse = {
   duration?: number;
   timezone?: string;
   join_url?: string;
+  password?: string;
 };
 
 type NormalizedDate = {
@@ -112,6 +114,23 @@ function toMinutes(time: string) {
   return hour * 60 + minute;
 }
 
+function addMinutesToLocalDateTime(
+  isoDate: string,
+  time: string,
+  minutesToAdd: number,
+) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  date.setUTCMinutes(date.getUTCMinutes() + minutesToAdd);
+
+  return `${date.getUTCFullYear()}-${pad2(
+    String(date.getUTCMonth() + 1),
+  )}-${pad2(String(date.getUTCDate()))}T${pad2(
+    String(date.getUTCHours()),
+  )}:${pad2(String(date.getUTCMinutes()))}:00`;
+}
+
 function getZoomEnv() {
   const accountId = process.env.ZOOM_ACCOUNT_ID;
   const clientId = process.env.ZOOM_CLIENT_ID;
@@ -127,6 +146,22 @@ function getZoomEnv() {
     clientId,
     clientSecret,
     hostEmail,
+  };
+}
+
+function getGoogleEnv() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    return null;
+  }
+
+  return {
+    clientId,
+    clientSecret,
+    refreshToken,
   };
 }
 
@@ -160,6 +195,83 @@ async function getZoomAccessToken(
     accessToken: tokenData.access_token ?? null,
     status: response.status,
   };
+}
+
+async function insertGoogleCalendarEvent({
+  topic,
+  startTimeIso,
+  endTimeIso,
+  joinUrl,
+  meetingId,
+  passcode,
+  guestEmail,
+}: {
+  topic: string;
+  startTimeIso: string;
+  endTimeIso: string;
+  joinUrl: string;
+  meetingId: string;
+  passcode: string;
+  guestEmail: string;
+}) {
+  const env = getGoogleEnv();
+
+  if (!env) {
+    return {
+      calendarSynced: false,
+      calendarError: "Google Calendar環境変数が不足しています。",
+      calendarEventLink: "",
+    };
+  }
+
+  try {
+    const oauth2Client = new google.auth.OAuth2(
+      env.clientId,
+      env.clientSecret,
+    );
+
+    oauth2Client.setCredentials({
+      refresh_token: env.refreshToken,
+    });
+
+    const calendar = google.calendar({
+      version: "v3",
+      auth: oauth2Client,
+    });
+
+    const event = await calendar.events.insert({
+      calendarId: "primary",
+      requestBody: {
+        summary: topic,
+        description: [
+          `Zoom Join URL: ${joinUrl || "未取得"}`,
+          `Meeting ID: ${meetingId || "未取得"}`,
+          `Passcode: ${passcode || "未設定"}`,
+        ].join("\n"),
+        start: {
+          dateTime: startTimeIso,
+          timeZone: timezone,
+        },
+        end: {
+          dateTime: endTimeIso,
+          timeZone: timezone,
+        },
+        attendees: guestEmail ? [{ email: guestEmail }] : [],
+      },
+    });
+
+    return {
+      calendarSynced: true,
+      calendarError: "",
+      calendarEventLink: event.data.htmlLink ?? "",
+    };
+  } catch {
+    return {
+      calendarSynced: false,
+      calendarError: "Google Calendar登録に失敗しました。",
+      calendarEventLink: "",
+    };
+  }
 }
 
 export async function POST(request: Request) {
@@ -302,18 +414,37 @@ export async function POST(request: Request) {
     }
 
     const meeting = (await response.json()) as ZoomMeetingResponse;
+    const meetingId = String(meeting.id ?? "");
+    const joinUrl = meeting.join_url ?? "";
+    const passcode = meeting.password ?? "";
+    const calendarResult = await insertGoogleCalendarEvent({
+      topic: received.topic,
+      startTimeIso,
+      endTimeIso: addMinutesToLocalDateTime(
+        normalizedDate.isoDate,
+        startTime,
+        meeting.duration ?? duration,
+      ),
+      joinUrl,
+      meetingId,
+      passcode,
+      guestEmail: received.guestEmail,
+    });
 
     return NextResponse.json({
       ok: true,
       message: "Zoomミーティングを作成しました。",
       meeting: {
-        id: String(meeting.id ?? ""),
+        id: meetingId,
         topic: meeting.topic ?? received.topic,
         startTime: startTimeIso,
         duration: meeting.duration ?? duration,
         timezone: meeting.timezone ?? timezone,
-        joinUrl: meeting.join_url ?? "",
+        joinUrl,
       },
+      calendarSynced: calendarResult.calendarSynced,
+      calendarEventLink: calendarResult.calendarEventLink,
+      calendarError: calendarResult.calendarError,
     });
   } catch {
     return NextResponse.json(

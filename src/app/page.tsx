@@ -38,9 +38,17 @@ type ZoomCreateMeetingResponse = {
     timezone: string;
     joinUrl: string;
   };
+  calendarSynced?: boolean;
+  calendarEventLink?: string;
+  calendarError?: string;
 };
 
 type CreatedZoomMeeting = NonNullable<ZoomCreateMeetingResponse["meeting"]>;
+type CalendarSyncResult = {
+  synced: boolean;
+  htmlLink: string;
+  error: string;
+};
 
 const samplePrompt =
   "5月27日 11:00〜11:30、田中さんとZoom。メールは tanaka@example.com";
@@ -251,6 +259,8 @@ export default function Home() {
   const [zoomErrorMessage, setZoomErrorMessage] = useState("");
   const [createdZoomMeeting, setCreatedZoomMeeting] =
     useState<CreatedZoomMeeting | null>(null);
+  const [calendarSyncResult, setCalendarSyncResult] =
+    useState<CalendarSyncResult | null>(null);
   const [isInvitationEmailReady, setIsInvitationEmailReady] = useState(false);
   const [hasInputChangedAfterConfirmation, setHasInputChangedAfterConfirmation] =
     useState(false);
@@ -279,6 +289,7 @@ export default function Home() {
     setIsZoomSubmitting(false);
     setZoomErrorMessage("");
     setCreatedZoomMeeting(null);
+    setCalendarSyncResult(null);
     setIsInvitationEmailReady(false);
     setHasInputChangedAfterConfirmation(false);
   };
@@ -289,6 +300,7 @@ export default function Home() {
     setIsZoomSubmitting(false);
     setZoomErrorMessage("");
     setCreatedZoomMeeting(null);
+    setCalendarSyncResult(null);
     setIsInvitationEmailReady(false);
   };
 
@@ -333,6 +345,7 @@ export default function Home() {
     setIsZoomSubmitting(false);
     setZoomErrorMessage("");
     setCreatedZoomMeeting(null);
+    setCalendarSyncResult(null);
     setIsInvitationEmailReady(false);
     setHasInputChangedAfterConfirmation(false);
   };
@@ -367,12 +380,18 @@ export default function Home() {
       }
 
       setCreatedZoomMeeting(data.meeting ?? null);
+      setCalendarSyncResult({
+        synced: data.calendarSynced ?? false,
+        htmlLink: data.calendarEventLink ?? "",
+        error: data.calendarError ?? "",
+      });
       setIsZoomReady(true);
       handlePrepareInvitationEmail();
     } catch (error) {
       setIsZoomReady(false);
       setIsInvitationEmailReady(false);
       setCreatedZoomMeeting(null);
+      setCalendarSyncResult(null);
       setZoomErrorMessage(
         error instanceof Error
           ? error.message
@@ -503,6 +522,7 @@ export default function Home() {
             <ExecutionSummarySection
               result={extractionResult}
               meeting={createdZoomMeeting}
+              calendarSyncResult={calendarSyncResult}
               canConfirmCalendarSync={canConfirmCalendarSync}
               isInvitationEmailReady={isInvitationEmailReady}
               onStartNewSchedule={handleStartNewSchedule}
@@ -613,12 +633,14 @@ function ConfirmationEmptyState({
 function ExecutionSummarySection({
   result,
   meeting,
+  calendarSyncResult,
   canConfirmCalendarSync,
   isInvitationEmailReady,
   onStartNewSchedule,
 }: {
   result: ExtractionResult;
   meeting: CreatedZoomMeeting | null;
+  calendarSyncResult: CalendarSyncResult | null;
   canConfirmCalendarSync: boolean;
   isInvitationEmailReady: boolean;
   onStartNewSchedule: () => void;
@@ -680,12 +702,26 @@ function ExecutionSummarySection({
         </article>
 
         <article className="execution-summary-card execution-summary-card-calendar">
-          <h3>カレンダー連携確認</h3>
+          <h3>
+            {calendarSyncResult?.synced
+              ? "Google Calendar 登録済み"
+              : "カレンダー連携確認"}
+          </h3>
+          {calendarSyncResult?.synced ? (
+            <span className="calendar-synced-badge">登録済み</span>
+          ) : null}
           <p>
-            {canConfirmCalendarSync
-              ? "Zoom作成後、ceo@hirotoebata.jp の連携カレンダーへ自動反映される想定です。"
-              : "日付・開始時間・終了時間が不足しているため、カレンダー自動連携の確認ができません。"}
+            {calendarSyncResult?.synced
+              ? "Zoom作成後、Google Calendar に予定を登録しました。"
+              : canConfirmCalendarSync
+                ? "Zoom作成後、ceo@hirotoebata.jp の連携カレンダーへ自動反映される想定です。"
+                : "日付・開始時間・終了時間が不足しているため、カレンダー自動連携の確認ができません。"}
           </p>
+          {calendarSyncResult && !calendarSyncResult.synced ? (
+            <p className="execution-summary-warning">
+              {calendarSyncResult.error || "Google Calendar登録に失敗しました。"}
+            </p>
+          ) : null}
           <div className="execution-summary-lines">
             <p>
               <strong>登録元</strong>
@@ -695,6 +731,19 @@ function ExecutionSummarySection({
               <strong>予定</strong>
               <span>{dateTime}</span>
             </p>
+            {calendarSyncResult?.htmlLink ? (
+              <p>
+                <strong>予定URL</strong>
+                <a
+                  href={calendarSyncResult.htmlLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="execution-summary-link"
+                >
+                  Google Calendarで開く
+                </a>
+              </p>
+            ) : null}
           </div>
         </article>
 

@@ -636,6 +636,17 @@ textarea {
   color: #0369a1;
 }
 
+.calendar-synced-badge {
+  display: inline-flex;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: #d1fae5;
+  padding: 6px 10px;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .execution-summary-card-email {
   border-color: #ddd6fe;
   background: #f5f3ff;
