@@ -718,9 +718,12 @@ function ExecutionSummarySection({
                 : "日付・開始時間・終了時間が不足しているため、カレンダー自動連携の確認ができません。"}
           </p>
           {calendarSyncResult && !calendarSyncResult.synced ? (
-            <p className="execution-summary-warning">
-              {calendarSyncResult.error || "Google Calendar登録に失敗しました。"}
-            </p>
+            <div className="execution-summary-warning">
+              <p>Google Calendar登録に失敗しました。</p>
+              {calendarSyncResult.error ? (
+                <small>{calendarSyncResult.error}</small>
+              ) : null}
+            </div>
           ) : null}
           <div className="execution-summary-lines">
             <p>

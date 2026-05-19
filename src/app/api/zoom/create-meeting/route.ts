@@ -165,6 +165,45 @@ function getGoogleEnv() {
   };
 }
 
+type GoogleApiErrorLike = {
+  message?: string;
+  response?: {
+    data?: unknown;
+  };
+};
+
+function sanitizeErrorText(value: string) {
+  return value
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [redacted]")
+    .replace(
+      /access_token["'\s:]+[A-Za-z0-9._~+/=-]+/gi,
+      "access_token [redacted]",
+    )
+    .replace(
+      /refresh_token["'\s:]+[A-Za-z0-9._~+/=-]+/gi,
+      "refresh_token [redacted]",
+    )
+    .replace(
+      /client_secret["'\s:]+[A-Za-z0-9._~+/=-]+/gi,
+      "client_secret [redacted]",
+    );
+}
+
+function getGoogleCalendarErrorMessage(error: unknown) {
+  const googleError = error as GoogleApiErrorLike;
+  const responseData = googleError.response?.data;
+  const responseMessage =
+    responseData && typeof responseData === "object"
+      ? JSON.stringify(responseData)
+      : typeof responseData === "string"
+        ? responseData
+        : "";
+  const message = googleError.message ?? "";
+  const details = [responseMessage, message].filter(Boolean).join(" / ");
+
+  return sanitizeErrorText(details || "Google Calendar登録に失敗しました。");
+}
+
 async function getZoomAccessToken(
   env: NonNullable<ReturnType<typeof getZoomEnv>>,
 ) {
@@ -265,10 +304,12 @@ async function insertGoogleCalendarEvent({
       calendarError: "",
       calendarEventLink: event.data.htmlLink ?? "",
     };
-  } catch {
+  } catch (error) {
+    console.error("Google Calendar Error:", error);
+
     return {
       calendarSynced: false,
-      calendarError: "Google Calendar登録に失敗しました。",
+      calendarError: getGoogleCalendarErrorMessage(error),
       calendarEventLink: "",
     };
   }

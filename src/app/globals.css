@@ -694,6 +694,22 @@ textarea {
   background: #fefce8;
 }
 
+.execution-summary-warning p {
+  margin: 0;
+  color: #854d0e !important;
+}
+
+.execution-summary-warning small {
+  display: block;
+  margin-top: 6px;
+  color: #92400e;
+  font-size: 11px;
+  line-height: 1.55;
+  font-weight: 700;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
 .execution-summary-ready {
   border: 1px solid #ddd6fe;
   background: #ffffff;
