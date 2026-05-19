@@ -228,6 +228,8 @@ export default function Home() {
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [isZoomReady, setIsZoomReady] = useState(false);
   const [isInvitationEmailReady, setIsInvitationEmailReady] = useState(false);
+  const [hasInputChangedAfterConfirmation, setHasInputChangedAfterConfirmation] =
+    useState(false);
   const [followUpInputs, setFollowUpInputs] = useState<FollowUpInputs>({});
   const [appliedFollowUps, setAppliedFollowUps] = useState<FollowUpInputs>({});
 
@@ -251,6 +253,34 @@ export default function Home() {
     setHasConfirmed(true);
     setIsZoomReady(false);
     setIsInvitationEmailReady(false);
+    setHasInputChangedAfterConfirmation(false);
+  };
+
+  const resetPreparationState = () => {
+    setHasConfirmed(false);
+    setIsZoomReady(false);
+    setIsInvitationEmailReady(false);
+  };
+
+  const handleNaturalInputChange = (value: string) => {
+    const shouldShowChangedMessage =
+      hasConfirmed || isZoomReady || isInvitationEmailReady;
+
+    setNaturalInput(value);
+    resetPreparationState();
+    setHasInputChangedAfterConfirmation(
+      (current) => current || shouldShowChangedMessage,
+    );
+    setFollowUpInputs({});
+    setAppliedFollowUps({});
+  };
+
+  const handleStartNewSchedule = () => {
+    setNaturalInput("");
+    resetPreparationState();
+    setHasInputChangedAfterConfirmation(false);
+    setFollowUpInputs({});
+    setAppliedFollowUps({});
   };
 
   const updateFollowUpInput = (key: keyof FollowUpInputs, value: string) => {
@@ -271,6 +301,7 @@ export default function Home() {
     setHasConfirmed(true);
     setIsZoomReady(false);
     setIsInvitationEmailReady(false);
+    setHasInputChangedAfterConfirmation(false);
   };
 
   const handleCreateZoomMeeting = () => {
@@ -313,14 +344,9 @@ export default function Home() {
                 <span>予定の内容</span>
                 <textarea
                   value={naturalInput}
-                  onChange={(event) => {
-                    setNaturalInput(event.target.value);
-                    setHasConfirmed(false);
-                    setIsZoomReady(false);
-                    setIsInvitationEmailReady(false);
-                    setFollowUpInputs({});
-                    setAppliedFollowUps({});
-                  }}
+                  onChange={(event) =>
+                    handleNaturalInputChange(event.target.value)
+                  }
                   placeholder={samplePrompt}
                   className="natural-input"
                 />
@@ -391,10 +417,11 @@ export default function Home() {
                     />
                   </>
                 ) : (
-                  <div className="empty-state">
-                    <p>まだ確認内容はありません</p>
-                    <span>自然文を入力して「確認する」を押してください。</span>
-                  </div>
+                  <ConfirmationEmptyState
+                    hasInputChangedAfterConfirmation={
+                      hasInputChangedAfterConfirmation
+                    }
+                  />
                 )}
               </section>
             </aside>
@@ -405,6 +432,7 @@ export default function Home() {
               result={extractionResult}
               canConfirmCalendarSync={canConfirmCalendarSync}
               isInvitationEmailReady={isInvitationEmailReady}
+              onStartNewSchedule={handleStartNewSchedule}
             />
           ) : null}
         </section>
@@ -476,14 +504,41 @@ function ZoomPreparationPanel({
   );
 }
 
+function ConfirmationEmptyState({
+  hasInputChangedAfterConfirmation,
+}: {
+  hasInputChangedAfterConfirmation: boolean;
+}) {
+  return (
+    <div
+      className={`empty-state ${
+        hasInputChangedAfterConfirmation ? "empty-state-changed" : ""
+      }`}
+    >
+      <p>
+        {hasInputChangedAfterConfirmation
+          ? "入力内容が変更されました。もう一度確認してください。"
+          : "まだ確認内容はありません"}
+      </p>
+      <span>
+        {hasInputChangedAfterConfirmation
+          ? "「確認する」を押すと、変更後の内容で確認画面を作り直します。"
+          : "自然文を入力して「確認する」を押してください。"}
+      </span>
+    </div>
+  );
+}
+
 function ExecutionSummarySection({
   result,
   canConfirmCalendarSync,
   isInvitationEmailReady,
+  onStartNewSchedule,
 }: {
   result: ExtractionResult;
   canConfirmCalendarSync: boolean;
   isInvitationEmailReady: boolean;
+  onStartNewSchedule: () => void;
 }) {
   const { details } = result;
   const dateTime = `${details.date} ${details.startTime}〜${details.endTime}`;
@@ -491,8 +546,17 @@ function ExecutionSummarySection({
   return (
     <section className="execution-summary-section">
       <div className="execution-summary-header">
-        <p className="eyebrow eyebrow-green">実行前の確認</p>
-        <h2>実行準備サマリー</h2>
+        <div>
+          <p className="eyebrow eyebrow-green">実行前の確認</p>
+          <h2>実行準備サマリー</h2>
+        </div>
+        <button
+          type="button"
+          className="new-schedule-button"
+          onClick={onStartNewSchedule}
+        >
+          新しい予定を入力する
+        </button>
       </div>
 
       <div className="execution-summary-grid">
