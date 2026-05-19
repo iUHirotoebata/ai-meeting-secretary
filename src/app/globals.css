@@ -3,8 +3,16 @@
 @tailwind utilities;
 
 :root {
-  --background: #f6f7fb;
+  --background: #f6fbff;
   --foreground: #172033;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
 }
 
 body {

@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "江端AI秘書",
-  description: "Zoom予約・カレンダー登録・メール通知を自動化する準備中のMVP",
+  description: "Zoom予約・カレンダー登録・メール通知を自動化する準備中のMVPです。",
 };
 
 export default function RootLayout({
