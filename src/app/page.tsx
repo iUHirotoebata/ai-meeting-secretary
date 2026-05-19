@@ -61,8 +61,8 @@ const statusCards = [
     tone: "status-card-green",
   },
   {
-    title: "メール通知予定",
-    description: "自分と相手へ招待メールを送る想定です。",
+    title: "招待メール送信準備",
+    description: "自分と相手へZoom URL付きの招待メールを送る想定です。",
     tone: "status-card-teal",
   },
 ];
@@ -236,6 +236,7 @@ export default function Home() {
   const [naturalInput, setNaturalInput] = useState(samplePrompt);
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [isZoomReady, setIsZoomReady] = useState(false);
+  const [isInvitationEmailReady, setIsInvitationEmailReady] = useState(false);
   const [followUpInputs, setFollowUpInputs] = useState<FollowUpInputs>({});
   const [appliedFollowUps, setAppliedFollowUps] = useState<FollowUpInputs>({});
 
@@ -258,6 +259,7 @@ export default function Home() {
     event.preventDefault();
     setHasConfirmed(true);
     setIsZoomReady(false);
+    setIsInvitationEmailReady(false);
   };
 
   const updateFollowUpInput = (key: keyof FollowUpInputs, value: string) => {
@@ -277,6 +279,7 @@ export default function Home() {
     });
     setHasConfirmed(true);
     setIsZoomReady(false);
+    setIsInvitationEmailReady(false);
   };
 
   const handleCreateZoomMeeting = () => {
@@ -285,6 +288,11 @@ export default function Home() {
     }
 
     setIsZoomReady(true);
+    handlePrepareInvitationEmail();
+  };
+
+  const handlePrepareInvitationEmail = () => {
+    setIsInvitationEmailReady(!extractionResult.isEmailMissing);
   };
 
   return (
@@ -318,6 +326,7 @@ export default function Home() {
                     setNaturalInput(event.target.value);
                     setHasConfirmed(false);
                     setIsZoomReady(false);
+                    setIsInvitationEmailReady(false);
                     setFollowUpInputs({});
                     setAppliedFollowUps({});
                   }}
@@ -392,6 +401,10 @@ export default function Home() {
                       onCreateZoom={handleCreateZoomMeeting}
                     />
                     <CalendarSyncPanel canConfirm={canConfirmCalendarSync} />
+                    <InvitationEmailPanel
+                      result={extractionResult}
+                      isReady={isInvitationEmailReady}
+                    />
                     <NoticePanels
                       result={extractionResult}
                       values={followUpInputs}
@@ -517,6 +530,66 @@ function CalendarSyncPanel({ canConfirm }: { canConfirm: boolean }) {
           ? "Zoom作成後、ceo@hirotoebata.jp の連携カレンダーへ自動反映される想定です。"
           : "日付・開始時間・終了時間が不足しているため、カレンダー自動連携の確認ができません。"}
       </p>
+    </section>
+  );
+}
+
+function InvitationEmailPanel({
+  result,
+  isReady,
+}: {
+  result: ExtractionResult;
+  isReady: boolean;
+}) {
+  const summaryItems = [
+    ["送信元", "ceo@hirotoebata.jp"],
+    ["送信先", result.details.guestEmail],
+    ["件名", result.details.title || "未抽出"],
+    [
+      "日時",
+      `${result.details.date} ${result.details.startTime}〜${result.details.endTime}`,
+    ],
+    ["相手の名前", result.details.guestName || "未抽出"],
+  ];
+
+  return (
+    <section className="invitation-email-card">
+      <div className="invitation-email-header">
+        <div>
+          <h3>招待メール送信確認</h3>
+          <p>Zoom作成後、自分と相手へ招待メールを送る想定です。</p>
+        </div>
+        <span
+          className={`invitation-email-state ${
+            result.isEmailMissing
+              ? "invitation-email-state-warning"
+              : "invitation-email-state-ready"
+          }`}
+        >
+          {result.isEmailMissing ? "要確認" : isReady ? "準備OK" : "待機中"}
+        </span>
+      </div>
+
+      {result.isEmailMissing ? (
+        <p className="invitation-email-warning">
+          相手メールが不明のため、招待メール送信にはメールアドレスの追加が必要です。
+        </p>
+      ) : (
+        <p className="invitation-email-ready">
+          招待メール送信準備ができています。
+          <br />
+          次のステップでメール送信APIに接続します。
+        </p>
+      )}
+
+      <dl>
+        {summaryItems.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }

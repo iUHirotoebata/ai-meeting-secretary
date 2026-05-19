@@ -606,6 +606,99 @@ textarea {
   font-weight: 700;
 }
 
+.invitation-email-card {
+  border: 1px solid #ddd6fe;
+  border-radius: 18px;
+  background: #f5f3ff;
+  padding: 15px;
+}
+
+.invitation-email-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.invitation-email-card h3 {
+  margin: 0;
+  color: #5b21b6;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.invitation-email-card p {
+  margin: 8px 0 0;
+  color: #6d28d9;
+  font-size: 13px;
+  line-height: 1.7;
+  font-weight: 700;
+}
+
+.invitation-email-state {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.invitation-email-state-ready {
+  color: #5b21b6;
+  background: #ede9fe;
+}
+
+.invitation-email-state-warning {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.invitation-email-warning {
+  border: 1px solid #fde68a;
+  border-radius: 14px;
+  background: #fefce8;
+  padding: 11px 12px;
+  color: #854d0e !important;
+}
+
+.invitation-email-ready {
+  border: 1px solid #ddd6fe;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 11px 12px;
+}
+
+.invitation-email-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin: 14px 0 0;
+}
+
+.invitation-email-card dl div {
+  border: 1px solid #ddd6fe;
+  border-radius: 14px;
+  background: #ffffff;
+  min-height: 68px;
+  padding: 10px 12px;
+}
+
+.invitation-email-card dt {
+  color: #6d28d9;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.invitation-email-card dd {
+  margin: 6px 0 0;
+  color: #0f172a;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 800;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
 .empty-state {
   margin-top: 20px;
   border: 1px dashed #cbd5e1;
@@ -737,6 +830,14 @@ textarea {
   }
 
   .zoom-ready-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .invitation-email-header {
+    flex-direction: column;
+  }
+
+  .invitation-email-card dl {
     grid-template-columns: 1fr;
   }
 }
