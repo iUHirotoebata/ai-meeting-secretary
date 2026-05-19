@@ -107,27 +107,30 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f6fbff] text-slate-950">
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <main className="min-h-screen bg-white text-slate-950">
+      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <header className="mx-auto w-full max-w-4xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            会議調整を、話しかけるだけで。
+            AI秘書 MVP
           </div>
-          <h1 className="mt-5 text-4xl font-bold tracking-normal text-slate-950 sm:text-6xl">
+          <h1 className="mt-6 text-4xl font-bold tracking-normal text-slate-950 sm:text-6xl">
             江端AI秘書
           </h1>
+          <p className="mt-4 text-xl font-bold leading-8 text-sky-800 sm:text-2xl">
+            会議調整を、話しかけるだけで。
+          </p>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
             Zoom予約・カレンダー登録・メール通知を自動化する準備中のMVPです。
           </p>
         </header>
 
-        <div className="mx-auto mt-8 w-full max-w-5xl rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_28px_90px_rgba(15,23,42,0.12)] sm:p-4">
-          <div className="rounded-[22px] border border-sky-100 bg-[#fbfdff] p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto mt-9 w-full max-w-5xl rounded-[30px] border border-slate-200 bg-white p-3 shadow-[0_30px_100px_rgba(15,23,42,0.14)] sm:p-4">
+          <div className="rounded-[24px] border border-sky-100 bg-sky-50/40 p-4 sm:p-6 lg:p-8">
             <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
               <form
                 onSubmit={handleSubmit}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
               >
                 <div className="flex flex-col gap-3">
                   <span className="w-fit rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">
@@ -154,7 +157,7 @@ export default function Home() {
                       setConfirmedDetails(null);
                     }}
                     placeholder={samplePrompt}
-                    className="min-h-56 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5 text-base leading-8 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                    className="min-h-60 w-full resize-y rounded-3xl border border-slate-200 bg-white px-5 py-5 text-base leading-8 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
                   />
                 </label>
 
@@ -168,14 +171,14 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={!hasInput}
-                  className="mt-6 h-14 w-full rounded-2xl bg-sky-700 px-6 text-base font-bold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-sky-200 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                className="mt-6 h-14 w-full rounded-2xl bg-sky-700 px-6 text-base font-bold text-white shadow-lg shadow-sky-700/25 transition hover:-translate-y-0.5 hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-sky-200 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none disabled:hover:translate-y-0"
                 >
                   確認する
                 </button>
               </form>
 
               <aside className="space-y-6">
-                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
@@ -193,7 +196,7 @@ export default function Home() {
                   <DetailsGrid details={extractedDetails} />
                 </section>
 
-                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h2 className="text-xl font-bold text-slate-950">
@@ -236,7 +239,7 @@ export default function Home() {
           {statusCards.map((card) => (
             <div
               key={card.title}
-              className={`rounded-2xl border p-5 shadow-sm ${card.accent}`}
+              className={`rounded-3xl border p-5 shadow-sm ${card.accent}`}
             >
               <div className="flex items-center gap-3">
                 <span className={`h-3 w-3 rounded-full ${card.dot}`} />
@@ -274,7 +277,7 @@ function DetailsGrid({
       {detailLabels.map(([key, label, tone]) => (
         <div
           key={key}
-          className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${
+          className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-sky-200 hover:shadow-md ${
             key === "memo" ? "sm:col-span-2" : ""
           } ${compact ? "sm:col-span-1" : ""}`}
         >
