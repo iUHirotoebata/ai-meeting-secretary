@@ -27,6 +27,15 @@ type FollowUpInputs = Partial<
   Pick<MeetingDetails, "date" | "startTime" | "endTime" | "guestEmail">
 >;
 
+const zoomSummaryLabels: Array<[keyof MeetingDetails, string]> = [
+  ["title", "会議タイトル"],
+  ["date", "日付"],
+  ["startTime", "開始時間"],
+  ["endTime", "終了時間"],
+  ["guestName", "相手の名前"],
+  ["guestEmail", "相手のメール"],
+];
+
 const samplePrompt =
   "5月27日 11:00〜11:30、田中さんとZoom。メールは tanaka@example.com";
 
@@ -42,8 +51,8 @@ const detailLabels: Array<[keyof MeetingDetails, string]> = [
 
 const statusCards = [
   {
-    title: "Zoom作成予定",
-    description: "確認後、Zoom URLを自動作成する想定です。",
+    title: "Zoom作成準備",
+    description: "確認後、この内容でZoomミーティングを作成します。",
     tone: "status-card-blue",
   },
   {
@@ -220,6 +229,7 @@ function extractMeetingDetails(
 export default function Home() {
   const [naturalInput, setNaturalInput] = useState(samplePrompt);
   const [hasConfirmed, setHasConfirmed] = useState(false);
+  const [isZoomReady, setIsZoomReady] = useState(false);
   const [followUpInputs, setFollowUpInputs] = useState<FollowUpInputs>({});
   const [appliedFollowUps, setAppliedFollowUps] = useState<FollowUpInputs>({});
 
@@ -229,10 +239,15 @@ export default function Home() {
   );
 
   const hasInput = naturalInput.trim().length > 0;
+  const canCreateZoom =
+    hasConfirmed &&
+    !extractionResult.isDateMissing &&
+    !extractionResult.isStartTimeMissing;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setHasConfirmed(true);
+    setIsZoomReady(false);
   };
 
   const updateFollowUpInput = (key: keyof FollowUpInputs, value: string) => {
@@ -251,6 +266,15 @@ export default function Home() {
       return next;
     });
     setHasConfirmed(true);
+    setIsZoomReady(false);
+  };
+
+  const handleCreateZoomMeeting = () => {
+    if (!canCreateZoom) {
+      return;
+    }
+
+    setIsZoomReady(true);
   };
 
   return (
@@ -283,6 +307,7 @@ export default function Home() {
                   onChange={(event) => {
                     setNaturalInput(event.target.value);
                     setHasConfirmed(false);
+                    setIsZoomReady(false);
                     setFollowUpInputs({});
                     setAppliedFollowUps({});
                   }}
@@ -356,6 +381,12 @@ export default function Home() {
                       onChange={updateFollowUpInput}
                       onApply={applyFollowUps}
                     />
+                    <ZoomPreparationPanel
+                      result={extractionResult}
+                      canCreateZoom={canCreateZoom}
+                      isZoomReady={isZoomReady}
+                      onCreateZoom={handleCreateZoomMeeting}
+                    />
                   </>
                 ) : (
                   <div className="empty-state">
@@ -403,6 +434,60 @@ function DetailsGrid({
         </div>
       ))}
     </dl>
+  );
+}
+
+function ZoomPreparationPanel({
+  result,
+  canCreateZoom,
+  isZoomReady,
+  onCreateZoom,
+}: {
+  result: ExtractionResult;
+  canCreateZoom: boolean;
+  isZoomReady: boolean;
+  onCreateZoom: () => void;
+}) {
+  return (
+    <section className="zoom-flow-card">
+      <button
+        type="button"
+        className="zoom-create-button"
+        disabled={!canCreateZoom}
+        onClick={onCreateZoom}
+      >
+        この内容でZoomを作成する
+      </button>
+
+      {!canCreateZoom ? (
+        <p className="zoom-disabled-message">
+          日付と開始時間が必要です。
+          <br />
+          不足情報を入力してからZoom作成に進んでください。
+        </p>
+      ) : null}
+
+      {canCreateZoom && result.isEmailMissing ? (
+        <p className="zoom-email-warning">
+          相手メールが不明のため、招待メール送信には追加確認が必要です。
+        </p>
+      ) : null}
+
+      {isZoomReady ? (
+        <div className="zoom-ready-card">
+          <h3>Zoom作成準備が完了しました。</h3>
+          <p>次のステップでZoom APIに接続します。</p>
+          <dl>
+            {zoomSummaryLabels.map(([key, label]) => (
+              <div key={key}>
+                <dt>{label}</dt>
+                <dd>{result.details[key] || "未抽出"}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
