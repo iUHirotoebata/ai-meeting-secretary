@@ -27,15 +27,6 @@ type FollowUpInputs = Partial<
   Pick<MeetingDetails, "date" | "startTime" | "endTime" | "guestEmail">
 >;
 
-const zoomSummaryLabels: Array<[keyof MeetingDetails, string]> = [
-  ["title", "会議タイトル"],
-  ["date", "日付"],
-  ["startTime", "開始時間"],
-  ["endTime", "終了時間"],
-  ["guestName", "相手の名前"],
-  ["guestEmail", "相手のメール"],
-];
-
 const samplePrompt =
   "5月27日 11:00〜11:30、田中さんとZoom。メールは tanaka@example.com";
 
@@ -395,21 +386,8 @@ export default function Home() {
                   <>
                     <DetailsGrid details={extractionResult.details} compact />
                     <ZoomPreparationPanel
-                      result={extractionResult}
                       canCreateZoom={canCreateZoom}
-                      isZoomReady={isZoomReady}
                       onCreateZoom={handleCreateZoomMeeting}
-                    />
-                    <CalendarSyncPanel canConfirm={canConfirmCalendarSync} />
-                    <InvitationEmailPanel
-                      result={extractionResult}
-                      isReady={isInvitationEmailReady}
-                    />
-                    <NoticePanels
-                      result={extractionResult}
-                      values={followUpInputs}
-                      onChange={updateFollowUpInput}
-                      onApply={applyFollowUps}
                     />
                   </>
                 ) : (
@@ -421,6 +399,14 @@ export default function Home() {
               </section>
             </aside>
           </div>
+
+          {isZoomReady ? (
+            <ExecutionSummarySection
+              result={extractionResult}
+              canConfirmCalendarSync={canConfirmCalendarSync}
+              isInvitationEmailReady={isInvitationEmailReady}
+            />
+          ) : null}
         </section>
 
         <section className="status-grid">
@@ -470,14 +456,10 @@ function DetailsGrid({
 }
 
 function ZoomPreparationPanel({
-  result,
   canCreateZoom,
-  isZoomReady,
   onCreateZoom,
 }: {
-  result: ExtractionResult;
   canCreateZoom: boolean;
-  isZoomReady: boolean;
   onCreateZoom: () => void;
 }) {
   return (
@@ -490,106 +472,117 @@ function ZoomPreparationPanel({
       >
         この内容でZoomを作成する
       </button>
-
-      {!canCreateZoom ? (
-        <p className="zoom-disabled-message">
-          日付と開始時間が必要です。不足情報を入力してからZoom作成に進んでください。
-        </p>
-      ) : null}
-
-      {canCreateZoom && result.isEmailMissing ? (
-        <p className="zoom-email-warning">
-          相手メールが不明のため、招待メール送信には追加確認が必要です。
-        </p>
-      ) : null}
-
-      {isZoomReady ? (
-        <div className="zoom-ready-card">
-          <h3>Zoom作成準備が完了しました。</h3>
-          <p>次のステップでZoom APIに接続します。</p>
-          <dl>
-            {zoomSummaryLabels.map(([key, label]) => (
-              <div key={key}>
-                <dt>{label}</dt>
-                <dd>{result.details[key] || "未抽出"}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      ) : null}
     </section>
   );
 }
 
-function CalendarSyncPanel({ canConfirm }: { canConfirm: boolean }) {
-  return (
-    <section className="calendar-sync-card">
-      <h3>カレンダー連携確認</h3>
-      <p>
-        {canConfirm
-          ? "Zoom作成後、ceo@hirotoebata.jp の連携カレンダーへ自動反映される想定です。"
-          : "日付・開始時間・終了時間が不足しているため、カレンダー自動連携の確認ができません。"}
-      </p>
-    </section>
-  );
-}
-
-function InvitationEmailPanel({
+function ExecutionSummarySection({
   result,
-  isReady,
+  canConfirmCalendarSync,
+  isInvitationEmailReady,
 }: {
   result: ExtractionResult;
-  isReady: boolean;
+  canConfirmCalendarSync: boolean;
+  isInvitationEmailReady: boolean;
 }) {
-  const summaryItems = [
-    ["送信元", "ceo@hirotoebata.jp"],
-    ["送信先", result.details.guestEmail],
-    ["件名", result.details.title || "未抽出"],
-    [
-      "日時",
-      `${result.details.date} ${result.details.startTime}〜${result.details.endTime}`,
-    ],
-    ["相手の名前", result.details.guestName || "未抽出"],
-  ];
+  const { details } = result;
+  const dateTime = `${details.date} ${details.startTime}〜${details.endTime}`;
 
   return (
-    <section className="invitation-email-card">
-      <div className="invitation-email-header">
-        <div>
-          <h3>招待メール送信確認</h3>
-          <p>Zoom作成後、自分と相手へ招待メールを送る想定です。</p>
-        </div>
-        <span
-          className={`invitation-email-state ${
-            result.isEmailMissing
-              ? "invitation-email-state-warning"
-              : "invitation-email-state-ready"
-          }`}
-        >
-          {result.isEmailMissing ? "要確認" : isReady ? "準備OK" : "待機中"}
-        </span>
+    <section className="execution-summary-section">
+      <div className="execution-summary-header">
+        <p className="eyebrow eyebrow-green">実行前の確認</p>
+        <h2>実行準備サマリー</h2>
       </div>
 
-      {result.isEmailMissing ? (
-        <p className="invitation-email-warning">
-          相手メールが不明のため、招待メール送信にはメールアドレスの追加が必要です。
-        </p>
-      ) : (
-        <p className="invitation-email-ready">
-          招待メール送信準備ができています。
-          <br />
-          次のステップでメール送信APIに接続します。
-        </p>
-      )}
-
-      <dl>
-        {summaryItems.map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
+      <div className="execution-summary-grid">
+        <article className="execution-summary-card execution-summary-card-zoom">
+          <h3>Zoom作成準備が完了しました。</h3>
+          <p>次のステップでZoom APIに接続します。</p>
+          <div className="execution-summary-lines">
+            <p>
+              <strong>会議</strong>
+              <span>{details.title || "未抽出"}</span>
+            </p>
+            <p>
+              <strong>日時</strong>
+              <span>{dateTime}</span>
+            </p>
+            <p>
+              <strong>相手</strong>
+              <span>
+                {details.guestName || "未抽出"} / {details.guestEmail}
+              </span>
+            </p>
           </div>
-        ))}
-      </dl>
+        </article>
+
+        <article className="execution-summary-card execution-summary-card-calendar">
+          <h3>カレンダー連携確認</h3>
+          <p>
+            {canConfirmCalendarSync
+              ? "Zoom作成後、ceo@hirotoebata.jp の連携カレンダーへ自動反映される想定です。"
+              : "日付・開始時間・終了時間が不足しているため、カレンダー自動連携の確認ができません。"}
+          </p>
+          <div className="execution-summary-lines">
+            <p>
+              <strong>登録元</strong>
+              <span>ceo@hirotoebata.jp</span>
+            </p>
+            <p>
+              <strong>予定</strong>
+              <span>{dateTime}</span>
+            </p>
+          </div>
+        </article>
+
+        <article className="execution-summary-card execution-summary-card-email">
+          <div className="execution-summary-title-row">
+            <h3>招待メール送信確認</h3>
+            <span
+              className={`execution-summary-state ${
+                result.isEmailMissing
+                  ? "execution-summary-state-warning"
+                  : "execution-summary-state-ready"
+              }`}
+            >
+              {result.isEmailMissing
+                ? "要確認"
+                : isInvitationEmailReady
+                  ? "準備OK"
+                  : "待機中"}
+            </span>
+          </div>
+          <p>Zoom作成後、自分と相手へ招待メールを送る想定です。</p>
+          {result.isEmailMissing ? (
+            <p className="execution-summary-warning">
+              相手メールが不明のため、招待メール送信にはメールアドレスの追加が必要です。
+            </p>
+          ) : (
+            <p className="execution-summary-ready">
+              招待メール送信準備ができています。次のステップでメール送信APIに接続します。
+            </p>
+          )}
+          <div className="execution-summary-lines">
+            <p>
+              <strong>送信元</strong>
+              <span>ceo@hirotoebata.jp</span>
+            </p>
+            <p>
+              <strong>送信先</strong>
+              <span>{details.guestEmail}</span>
+            </p>
+            <p>
+              <strong>件名</strong>
+              <span>{details.title || "未抽出"}</span>
+            </p>
+            <p>
+              <strong>日時</strong>
+              <span>{dateTime}</span>
+            </p>
+          </div>
+        </article>
+      </div>
     </section>
   );
 }
