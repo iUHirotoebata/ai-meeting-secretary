@@ -29,17 +29,17 @@ const statusCards = [
   {
     title: "Zoom作成予定",
     description: "確認後、Zoom URLを自動作成する想定です。",
-    classes: "border-sky-200 bg-sky-50 text-sky-700",
+    tone: "status-card-blue",
   },
   {
     title: "Google Calendar登録予定",
     description: "日時と参加者をカレンダーへ登録する想定です。",
-    classes: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    tone: "status-card-green",
   },
   {
     title: "メール通知予定",
     description: "相手へ招待メールを送る想定です。",
-    classes: "border-teal-200 bg-teal-50 text-teal-700",
+    tone: "status-card-teal",
   },
 ];
 
@@ -104,43 +104,30 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-emerald-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[960px] flex-col justify-center">
-        <section className="overflow-hidden rounded-[32px] border border-white/70 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.16)]">
-          <div className="border-b border-slate-100 bg-gradient-to-r from-sky-600 to-emerald-500 px-6 py-8 text-white sm:px-10 sm:py-10">
-            <p className="inline-flex rounded-full bg-white/20 px-4 py-2 text-sm font-bold backdrop-blur">
-              AI秘書 MVP
-            </p>
-            <h1 className="mt-5 text-4xl font-bold tracking-normal sm:text-6xl">
-              江端AI秘書
-            </h1>
-            <p className="mt-4 text-xl font-bold sm:text-2xl">
-              会議調整を、話しかけるだけで。
-            </p>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-sky-50">
+    <main className="app-shell">
+      <div className="app-container">
+        <section className="product-card">
+          <header className="hero-panel">
+            <p className="hero-badge">AI秘書 MVP</p>
+            <h1 className="hero-title">江端AI秘書</h1>
+            <p className="hero-subtitle">会議調整を、話しかけるだけで。</p>
+            <p className="hero-description">
               Zoom予約・カレンダー登録・メール通知を自動化する準備中のMVPです。
             </p>
-          </div>
+          </header>
 
-          <div className="grid gap-6 bg-white p-5 sm:p-8 lg:grid-cols-[1.05fr_0.95fr] lg:p-10">
-            <form
-              onSubmit={handleSubmit}
-              className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-6"
-            >
-              <div>
-                <p className="text-sm font-bold text-sky-700">自然文入力</p>
-                <h2 className="mt-2 text-2xl font-bold text-slate-950">
-                  AI秘書に予定を伝える
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
+          <div className="workspace-grid">
+            <form onSubmit={handleSubmit} className="input-card">
+              <div className="section-heading">
+                <p className="eyebrow">自然文入力</p>
+                <h2>AI秘書に予定を伝える</h2>
+                <p>
                   いつものメッセージのように入力すると、会議情報を仮整理します。
                 </p>
               </div>
 
-              <label className="mt-6 block">
-                <span className="mb-2 block text-sm font-bold text-slate-700">
-                  予定の内容
-                </span>
+              <label className="input-block">
+                <span>予定の内容</span>
                 <textarea
                   value={naturalInput}
                   onChange={(event) => {
@@ -148,60 +135,48 @@ export default function Home() {
                     setConfirmedDetails(null);
                   }}
                   placeholder={samplePrompt}
-                  className="min-h-[260px] w-full resize-y rounded-3xl border border-slate-200 bg-slate-50 px-5 py-5 text-base leading-8 text-slate-950 shadow-inner shadow-slate-200/70 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                  className="natural-input"
                 />
               </label>
 
-              <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4">
-                <p className="text-sm font-bold text-emerald-900">入力例</p>
-                <p className="mt-2 text-sm leading-7 text-emerald-900">
-                  {samplePrompt}
-                </p>
+              <div className="example-box">
+                <p>入力例</p>
+                <span>{samplePrompt}</span>
               </div>
 
               <button
                 type="submit"
                 disabled={!hasInput}
-                className="mt-6 h-14 w-full rounded-2xl bg-gradient-to-r from-sky-600 to-emerald-500 px-6 text-base font-bold text-white shadow-lg shadow-sky-700/25 transition hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-sky-200 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none disabled:hover:translate-y-0"
+                className="confirm-button"
               >
                 確認する
               </button>
             </form>
 
-            <aside className="space-y-6">
-              <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm sm:p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold text-emerald-700">
-                      自動整理プレビュー
-                    </p>
-                    <h2 className="mt-2 text-2xl font-bold text-slate-950">
-                      仮抽出結果
-                    </h2>
+            <aside className="side-stack">
+              <section className="result-card">
+                <div className="result-header">
+                  <div className="section-heading">
+                    <p className="eyebrow eyebrow-green">自動整理プレビュー</p>
+                    <h2>仮抽出結果</h2>
                   </div>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-sky-700 shadow-sm">
-                    プレビュー
-                  </span>
+                  <span className="preview-pill">プレビュー</span>
                 </div>
 
                 <DetailsGrid details={extractedDetails} />
               </section>
 
-              <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-950">
-                      確認画面
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                      確認するボタンを押すと、ここに内容が反映されます。
-                    </p>
+              <section className="confirm-card">
+                <div className="result-header">
+                  <div className="section-heading compact-heading">
+                    <h2>確認画面</h2>
+                    <p>確認するボタンを押すと、ここに内容が反映されます。</p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
+                    className={`state-pill ${
                       confirmedDetails
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-slate-100 text-slate-500"
+                        ? "state-pill-confirmed"
+                        : "state-pill-empty"
                     }`}
                   >
                     {confirmedDetails ? "確認済み" : "未確認"}
@@ -211,13 +186,9 @@ export default function Home() {
                 {confirmedDetails ? (
                   <DetailsGrid details={confirmedDetails} compact />
                 ) : (
-                  <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-9 text-center">
-                    <p className="text-sm font-bold text-slate-700">
-                      まだ確認内容はありません
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                      自然文を入力して「確認する」を押してください。
-                    </p>
+                  <div className="empty-state">
+                    <p>まだ確認内容はありません</p>
+                    <span>自然文を入力して「確認する」を押してください。</span>
                   </div>
                 )}
               </section>
@@ -225,19 +196,12 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-3">
+        <section className="status-grid">
           {statusCards.map((card) => (
-            <div
-              key={card.title}
-              className={`rounded-3xl border p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)] ${card.classes}`}
-            >
-              <p className="text-base font-bold text-slate-950">{card.title}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                {card.description}
-              </p>
-              <span className="mt-4 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">
-                API連携は準備中
-              </span>
+            <div key={card.title} className={`status-card ${card.tone}`}>
+              <p>{card.title}</p>
+              <span>{card.description}</span>
+              <strong>API連携は準備中</strong>
             </div>
           ))}
         </section>
@@ -254,18 +218,16 @@ function DetailsGrid({
   compact?: boolean;
 }) {
   return (
-    <dl className={`mt-5 grid gap-3 ${compact ? "" : "sm:grid-cols-2"}`}>
+    <dl className={`details-grid ${compact ? "details-grid-compact" : ""}`}>
       {detailLabels.map(([key, label]) => (
         <div
           key={key}
-          className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${
-            key === "memo" && !compact ? "sm:col-span-2" : ""
+          className={`detail-item ${
+            key === "memo" && !compact ? "detail-item-wide" : ""
           }`}
         >
-          <dt className="text-xs font-bold text-slate-500">{label}</dt>
-          <dd className="mt-2 break-words text-sm font-bold leading-6 text-slate-950">
-            {details[key] || "未抽出"}
-          </dd>
+          <dt>{label}</dt>
+          <dd>{details[key] || "未抽出"}</dd>
         </div>
       ))}
     </dl>
