@@ -386,6 +386,68 @@ textarea {
   color: #075985;
 }
 
+.follow-up-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.follow-up-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.follow-up-form label span {
+  color: #78350f;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.follow-up-form input {
+  width: 100%;
+  border: 1px solid #fdba74;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 12px 13px;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+  box-shadow: 0 6px 16px rgba(146, 64, 14, 0.08);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.follow-up-form input::placeholder {
+  color: #b45309;
+  opacity: 0.65;
+}
+
+.follow-up-form input:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.16);
+}
+
+.follow-up-form button {
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0284c7 0%, #10b981 100%);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(2, 132, 199, 0.22);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.follow-up-form button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 15px 30px rgba(2, 132, 199, 0.28);
+}
+
 .empty-state {
   margin-top: 20px;
   border: 1px dashed #cbd5e1;

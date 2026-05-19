@@ -17,7 +17,15 @@ type ExtractionResult = {
   missingMessages: string[];
   autoMessages: string[];
   needsConfirmation: boolean;
+  isDateMissing: boolean;
+  isStartTimeMissing: boolean;
+  isEmailMissing: boolean;
+  isEndTimeAutoCompleted: boolean;
 };
+
+type FollowUpInputs = Partial<
+  Pick<MeetingDetails, "date" | "startTime" | "endTime" | "guestEmail">
+>;
 
 const samplePrompt =
   "5月27日 11:00〜11:30、田中さんとZoom。メールは tanaka@example.com";
@@ -94,7 +102,14 @@ function extractTimes(input: string) {
   };
 }
 
-function extractMeetingDetails(input: string): ExtractionResult {
+function cleanTimeInput(value: string | undefined) {
+  return value?.trim() ? normalizeTime(value.trim()) : "";
+}
+
+function extractMeetingDetails(
+  input: string,
+  followUps: FollowUpInputs = {},
+): ExtractionResult {
   const email = input.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? "";
   const dateMatch =
     input.match(/(\d{1,2})月\s*(\d{1,2})日/) ??
@@ -115,34 +130,46 @@ function extractMeetingDetails(input: string): ExtractionResult {
     }
   }
 
-  const isDateMissing = !date;
-  const isStartTimeMissing = !extractedTimes.startTime;
+  const followUpStartTime = cleanTimeInput(followUps.startTime);
+  const followUpEndTime = cleanTimeInput(followUps.endTime);
+  const finalDate = followUps.date?.trim() || date;
+  const finalStartTime = followUpStartTime || extractedTimes.startTime;
+  let finalEndTime = followUpEndTime || extractedTimes.endTime;
+  let isEndTimeAutoCompleted =
+    !followUpEndTime && extractedTimes.autoCompletedEndTime;
+  const finalEmail = followUps.guestEmail?.trim() || email;
+
+  if (finalStartTime && !finalEndTime) {
+    finalEndTime = addOneHour(finalStartTime);
+    isEndTimeAutoCompleted = true;
+  }
+
+  if (followUpStartTime && !followUpEndTime) {
+    finalEndTime = addOneHour(followUpStartTime);
+    isEndTimeAutoCompleted = true;
+  }
+
+  const isDateMissing = !finalDate;
+  const isStartTimeMissing = !finalStartTime;
+  const isEmailMissing = !finalEmail;
   const missingMessages: string[] = [];
   const autoMessages: string[] = [];
 
-  if (isDateMissing && isStartTimeMissing) {
-    missingMessages.push(
-      "日付と開始時間が入っていません。いつの予定か教えてください。",
-    );
-  } else {
-    if (isDateMissing) {
-      missingMessages.push("日付が入っていません。日付を入力してください。");
-    }
-
-    if (isStartTimeMissing) {
-      missingMessages.push(
-        "時間が入っていません。開始時間を入力してください。",
-      );
-    }
+  if (isDateMissing) {
+    missingMessages.push("日付が入っていません。いつの予定ですか？");
   }
 
-  if (!email) {
+  if (isStartTimeMissing) {
+    missingMessages.push("開始時間が入っていません。何時からですか？");
+  }
+
+  if (isEmailMissing) {
     missingMessages.push(
       "相手メールは不明です。必要に応じて後で追加してください。",
     );
   }
 
-  if (extractedTimes.autoCompletedEndTime) {
+  if (isEndTimeAutoCompleted) {
     autoMessages.push("終了時間は開始時間の1時間後に自動設定しました。");
   }
 
@@ -153,34 +180,57 @@ function extractMeetingDetails(input: string): ExtractionResult {
         : mentionsZoom
           ? "Zoomミーティング"
           : "",
-      date: date || "日付が入っていません",
-      startTime: extractedTimes.startTime || "時間が入っていません",
-      endTime: extractedTimes.endTime || "時間が入っていません",
+      date: finalDate || "日付が入っていません",
+      startTime: finalStartTime || "時間が入っていません",
+      endTime: finalEndTime || "時間が入っていません",
       guestName,
-      guestEmail: email || "相手メールは不明",
+      guestEmail: finalEmail || "相手メールは不明",
       memo: input.trim(),
     },
     missingMessages,
     autoMessages,
     needsConfirmation: isDateMissing || isStartTimeMissing,
+    isDateMissing,
+    isStartTimeMissing,
+    isEmailMissing,
+    isEndTimeAutoCompleted,
   };
 }
 
 export default function Home() {
   const [naturalInput, setNaturalInput] = useState(samplePrompt);
-  const [confirmedResult, setConfirmedResult] =
-    useState<ExtractionResult | null>(null);
+  const [hasConfirmed, setHasConfirmed] = useState(false);
+  const [followUpInputs, setFollowUpInputs] = useState<FollowUpInputs>({});
+  const [appliedFollowUps, setAppliedFollowUps] = useState<FollowUpInputs>({});
 
   const extractionResult = useMemo(
-    () => extractMeetingDetails(naturalInput),
-    [naturalInput],
+    () => extractMeetingDetails(naturalInput, appliedFollowUps),
+    [naturalInput, appliedFollowUps],
   );
 
   const hasInput = naturalInput.trim().length > 0;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setConfirmedResult(extractionResult);
+    setHasConfirmed(true);
+  };
+
+  const updateFollowUpInput = (key: keyof FollowUpInputs, value: string) => {
+    setFollowUpInputs((current) => ({ ...current, [key]: value }));
+  };
+
+  const applyFollowUps = () => {
+    setAppliedFollowUps((current) => {
+      const next = { ...current };
+      Object.entries(followUpInputs).forEach(([key, value]) => {
+        const trimmedValue = value?.trim();
+        if (trimmedValue) {
+          next[key as keyof FollowUpInputs] = trimmedValue;
+        }
+      });
+      return next;
+    });
+    setHasConfirmed(true);
   };
 
   return (
@@ -212,7 +262,9 @@ export default function Home() {
                   value={naturalInput}
                   onChange={(event) => {
                     setNaturalInput(event.target.value);
-                    setConfirmedResult(null);
+                    setHasConfirmed(false);
+                    setFollowUpInputs({});
+                    setAppliedFollowUps({});
                   }}
                   placeholder={samplePrompt}
                   className="natural-input"
@@ -244,7 +296,12 @@ export default function Home() {
                 </div>
 
                 <DetailsGrid details={extractionResult.details} />
-                <NoticePanels result={extractionResult} />
+                <NoticePanels
+                  result={extractionResult}
+                  values={followUpInputs}
+                  onChange={updateFollowUpInput}
+                  onApply={applyFollowUps}
+                />
               </section>
 
               <section className="confirm-card">
@@ -255,25 +312,30 @@ export default function Home() {
                   </div>
                   <span
                     className={`state-pill ${
-                      confirmedResult
-                        ? confirmedResult.needsConfirmation
+                      hasConfirmed
+                        ? extractionResult.needsConfirmation
                           ? "state-pill-warning"
                           : "state-pill-confirmed"
                         : "state-pill-empty"
                     }`}
                   >
-                    {confirmedResult
-                      ? confirmedResult.needsConfirmation
+                    {hasConfirmed
+                      ? extractionResult.needsConfirmation
                         ? "要確認"
                         : "確認済み"
                       : "未確認"}
                   </span>
                 </div>
 
-                {confirmedResult ? (
+                {hasConfirmed ? (
                   <>
-                    <DetailsGrid details={confirmedResult.details} compact />
-                    <NoticePanels result={confirmedResult} />
+                    <DetailsGrid details={extractionResult.details} compact />
+                    <NoticePanels
+                      result={extractionResult}
+                      values={followUpInputs}
+                      onChange={updateFollowUpInput}
+                      onApply={applyFollowUps}
+                    />
                   </>
                 ) : (
                   <div className="empty-state">
@@ -324,21 +386,103 @@ function DetailsGrid({
   );
 }
 
-function NoticePanels({ result }: { result: ExtractionResult }) {
-  if (result.missingMessages.length === 0 && result.autoMessages.length === 0) {
+function NoticePanels({
+  result,
+  values,
+  onChange,
+  onApply,
+}: {
+  result: ExtractionResult;
+  values: FollowUpInputs;
+  onChange: (key: keyof FollowUpInputs, value: string) => void;
+  onApply: () => void;
+}) {
+  const shouldAskDate = result.isDateMissing;
+  const shouldAskStartTime = result.isStartTimeMissing;
+  const shouldAskEndTime =
+    result.isEndTimeAutoCompleted && !result.isStartTimeMissing;
+  const shouldAskEmail = result.isEmailMissing;
+  const hasFollowUpFields =
+    shouldAskDate || shouldAskStartTime || shouldAskEndTime || shouldAskEmail;
+
+  if (
+    result.missingMessages.length === 0 &&
+    result.autoMessages.length === 0 &&
+    !hasFollowUpFields
+  ) {
     return null;
   }
 
   return (
     <div className="notice-stack">
-      {result.missingMessages.length > 0 ? (
+      {result.missingMessages.length > 0 || hasFollowUpFields ? (
         <section className="notice-card notice-card-warning">
           <h3>追加で確認したいこと</h3>
-          <ul>
-            {result.missingMessages.map((message) => (
-              <li key={message}>{message}</li>
-            ))}
-          </ul>
+          {result.missingMessages.length > 0 ? (
+            <ul>
+              {result.missingMessages.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          ) : null}
+
+          {hasFollowUpFields ? (
+            <div className="follow-up-form">
+              {shouldAskDate ? (
+                <label>
+                  <span>日付</span>
+                  <input
+                    value={values.date ?? ""}
+                    onChange={(event) => onChange("date", event.target.value)}
+                    placeholder="例：5月27日"
+                  />
+                </label>
+              ) : null}
+
+              {shouldAskStartTime ? (
+                <label>
+                  <span>開始時間</span>
+                  <input
+                    value={values.startTime ?? ""}
+                    onChange={(event) =>
+                      onChange("startTime", event.target.value)
+                    }
+                    placeholder="例：11:00"
+                  />
+                </label>
+              ) : null}
+
+              {shouldAskEndTime ? (
+                <label>
+                  <span>終了時間</span>
+                  <input
+                    value={values.endTime ?? result.details.endTime}
+                    onChange={(event) =>
+                      onChange("endTime", event.target.value)
+                    }
+                    placeholder="例：12:00"
+                  />
+                </label>
+              ) : null}
+
+              {shouldAskEmail ? (
+                <label>
+                  <span>相手メール</span>
+                  <input
+                    value={values.guestEmail ?? ""}
+                    onChange={(event) =>
+                      onChange("guestEmail", event.target.value)
+                    }
+                    placeholder="例：tanaka@example.com"
+                  />
+                </label>
+              ) : null}
+
+              <button type="button" onClick={onApply}>
+                不足情報を反映する
+              </button>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
