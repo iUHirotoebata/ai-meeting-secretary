@@ -116,6 +116,25 @@ function cleanTimeInput(value: string | undefined) {
   return value?.trim() ? normalizeTime(value.trim()) : "";
 }
 
+function extractDate(input: string) {
+  const yearSlashMatch = input.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+  if (yearSlashMatch) {
+    return `${yearSlashMatch[1]}年${yearSlashMatch[2]}月${yearSlashMatch[3]}日`;
+  }
+
+  const monthDayTextMatch = input.match(/(\d{1,2})月\s*(\d{1,2})日/);
+  if (monthDayTextMatch) {
+    return `${monthDayTextMatch[1]}月${monthDayTextMatch[2]}日`;
+  }
+
+  const monthDaySlashMatch = input.match(/(?:^|[^\d])(\d{1,2})[/-](\d{1,2})(?=$|[^\d])/);
+  if (monthDaySlashMatch) {
+    return `${monthDaySlashMatch[1]}月${monthDaySlashMatch[2]}日`;
+  }
+
+  return "";
+}
+
 function extractMeetingDetails(
   input: string,
   followUps: FollowUpInputs = {},
@@ -123,24 +142,13 @@ function extractMeetingDetails(
   const normalizedInput = normalizeInput(input);
   const email =
     normalizedInput.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? "";
-  const dateMatch =
-    normalizedInput.match(/(\d{1,2})月\s*(\d{1,2})日/) ??
-    normalizedInput.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+  const date = extractDate(normalizedInput);
   const extractedTimes = extractTimes(normalizedInput);
   const guestMatch =
     normalizedInput.match(/([一-龥ぁ-んァ-ヶーA-Za-z\s]{1,24})さん/) ??
     normalizedInput.match(/([一-龥ぁ-んァ-ヶーA-Za-z\s]{1,24})(?:様|先生)/);
   const guestName = guestMatch?.[1]?.trim() ?? "";
   const mentionsZoom = /zoom/i.test(normalizedInput);
-
-  let date = "";
-  if (dateMatch) {
-    if (dateMatch.length === 3) {
-      date = `${dateMatch[1]}月${dateMatch[2]}日`;
-    } else {
-      date = `${dateMatch[1]}年${dateMatch[2]}月${dateMatch[3]}日`;
-    }
-  }
 
   const followUpStartTime = cleanTimeInput(followUps.startTime);
   const followUpEndTime = cleanTimeInput(followUps.endTime);
@@ -192,7 +200,7 @@ function extractMeetingDetails(
         : mentionsZoom
           ? "Zoomミーティング"
           : "",
-      date: finalDate || "日付が入っていません",
+      date: finalDate || "日付が入っていません（例：5月27日）",
       startTime: finalStartTime || "時間が入っていません",
       endTime: finalEndTime || "時間が入っていません",
       guestName,
