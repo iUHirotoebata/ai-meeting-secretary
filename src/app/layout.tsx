@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AI Meeting Secretary",
-  description: "AI秘書アプリのミーティング登録MVP",
+  title: "江端AI秘書",
+  description: "Zoom予約・カレンダー登録・メール通知を自動化する準備中のMVP",
 };
 
 export default function RootLayout({
