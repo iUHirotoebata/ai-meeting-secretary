@@ -530,6 +530,18 @@ textarea {
   background: #fefce8;
 }
 
+.zoom-api-error-message {
+  margin: 0;
+  border: 1px solid #fecaca;
+  border-radius: 16px;
+  background: #fef2f2;
+  padding: 13px 14px;
+  color: #991b1b;
+  font-size: 13px;
+  line-height: 1.7;
+  font-weight: 800;
+}
+
 .execution-summary-section {
   border-top: 1px solid #e2e8f0;
   background: #f8fafc;

@@ -27,6 +27,19 @@ type FollowUpInputs = Partial<
   Pick<MeetingDetails, "date" | "startTime" | "endTime" | "guestEmail">
 >;
 
+type ZoomCreateMeetingResponse = {
+  ok: boolean;
+  message: string;
+  received?: {
+    topic: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    guestName: string;
+    guestEmail: string;
+  };
+};
+
 const samplePrompt =
   "5月27日 11:00〜11:30、田中さんとZoom。メールは tanaka@example.com";
 
@@ -227,6 +240,8 @@ export default function Home() {
   const [naturalInput, setNaturalInput] = useState(samplePrompt);
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [isZoomReady, setIsZoomReady] = useState(false);
+  const [isZoomSubmitting, setIsZoomSubmitting] = useState(false);
+  const [zoomErrorMessage, setZoomErrorMessage] = useState("");
   const [isInvitationEmailReady, setIsInvitationEmailReady] = useState(false);
   const [hasInputChangedAfterConfirmation, setHasInputChangedAfterConfirmation] =
     useState(false);
@@ -252,6 +267,8 @@ export default function Home() {
     event.preventDefault();
     setHasConfirmed(true);
     setIsZoomReady(false);
+    setIsZoomSubmitting(false);
+    setZoomErrorMessage("");
     setIsInvitationEmailReady(false);
     setHasInputChangedAfterConfirmation(false);
   };
@@ -259,6 +276,8 @@ export default function Home() {
   const resetPreparationState = () => {
     setHasConfirmed(false);
     setIsZoomReady(false);
+    setIsZoomSubmitting(false);
+    setZoomErrorMessage("");
     setIsInvitationEmailReady(false);
   };
 
@@ -300,17 +319,54 @@ export default function Home() {
     });
     setHasConfirmed(true);
     setIsZoomReady(false);
+    setIsZoomSubmitting(false);
+    setZoomErrorMessage("");
     setIsInvitationEmailReady(false);
     setHasInputChangedAfterConfirmation(false);
   };
 
-  const handleCreateZoomMeeting = () => {
+  const handleCreateZoomMeeting = async () => {
     if (!canCreateZoom) {
       return;
     }
 
-    setIsZoomReady(true);
-    handlePrepareInvitationEmail();
+    setIsZoomSubmitting(true);
+    setZoomErrorMessage("");
+
+    try {
+      const response = await fetch("/api/zoom/create-meeting", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          topic: extractionResult.details.title,
+          date: extractionResult.details.date,
+          startTime: extractionResult.details.startTime,
+          endTime: extractionResult.details.endTime,
+          guestName: extractionResult.details.guestName,
+          guestEmail: extractionResult.details.guestEmail,
+        }),
+      });
+      const data = (await response.json()) as ZoomCreateMeetingResponse;
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.message || "Zoom API接続準備に失敗しました。");
+      }
+
+      setIsZoomReady(true);
+      handlePrepareInvitationEmail();
+    } catch (error) {
+      setIsZoomReady(false);
+      setIsInvitationEmailReady(false);
+      setZoomErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Zoom API接続準備に失敗しました。",
+      );
+    } finally {
+      setIsZoomSubmitting(false);
+    }
   };
 
   const handlePrepareInvitationEmail = () => {
@@ -413,6 +469,8 @@ export default function Home() {
                     <DetailsGrid details={extractionResult.details} compact />
                     <ZoomPreparationPanel
                       canCreateZoom={canCreateZoom}
+                      isSubmitting={isZoomSubmitting}
+                      errorMessage={zoomErrorMessage}
                       onCreateZoom={handleCreateZoomMeeting}
                     />
                   </>
@@ -485,9 +543,13 @@ function DetailsGrid({
 
 function ZoomPreparationPanel({
   canCreateZoom,
+  isSubmitting,
+  errorMessage,
   onCreateZoom,
 }: {
   canCreateZoom: boolean;
+  isSubmitting: boolean;
+  errorMessage: string;
   onCreateZoom: () => void;
 }) {
   return (
@@ -495,11 +557,15 @@ function ZoomPreparationPanel({
       <button
         type="button"
         className="zoom-create-button"
-        disabled={!canCreateZoom}
+        disabled={!canCreateZoom || isSubmitting}
         onClick={onCreateZoom}
       >
-        この内容でZoomを作成する
+        {isSubmitting ? "Zoom API接続準備中..." : "この内容でZoomを作成する"}
       </button>
+
+      {errorMessage ? (
+        <p className="zoom-api-error-message">{errorMessage}</p>
+      ) : null}
     </section>
   );
 }
