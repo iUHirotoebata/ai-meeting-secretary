@@ -15,34 +15,31 @@ type MeetingDetails = {
 const samplePrompt =
   "5月27日 11:00〜11:30、田中さんとZoom。メールは tanaka@example.com";
 
-const detailLabels: Array<[keyof MeetingDetails, string, string]> = [
-  ["title", "会議タイトル", "bg-sky-50 text-sky-700"],
-  ["date", "日付", "bg-emerald-50 text-emerald-700"],
-  ["startTime", "開始時間", "bg-cyan-50 text-cyan-700"],
-  ["endTime", "終了時間", "bg-teal-50 text-teal-700"],
-  ["guestName", "相手の名前", "bg-blue-50 text-blue-700"],
-  ["guestEmail", "相手のメール", "bg-slate-100 text-slate-700"],
-  ["memo", "メモ", "bg-emerald-50 text-emerald-700"],
+const detailLabels: Array<[keyof MeetingDetails, string]> = [
+  ["title", "会議タイトル"],
+  ["date", "日付"],
+  ["startTime", "開始時間"],
+  ["endTime", "終了時間"],
+  ["guestName", "相手の名前"],
+  ["guestEmail", "相手のメール"],
+  ["memo", "メモ"],
 ];
 
 const statusCards = [
   {
     title: "Zoom作成予定",
     description: "確認後、Zoom URLを自動作成する想定です。",
-    accent: "border-sky-200 bg-sky-50 text-sky-700",
-    dot: "bg-sky-500",
+    classes: "border-sky-200 bg-sky-50 text-sky-700",
   },
   {
     title: "Google Calendar登録予定",
     description: "日時と参加者をカレンダーへ登録する想定です。",
-    accent: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    dot: "bg-emerald-500",
+    classes: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
   {
     title: "メール通知予定",
     description: "相手へ招待メールを送る想定です。",
-    accent: "border-cyan-200 bg-cyan-50 text-cyan-700",
-    dot: "bg-cyan-500",
+    classes: "border-teal-200 bg-teal-50 text-teal-700",
   },
 ];
 
@@ -107,156 +104,144 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-slate-950">
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-        <header className="mx-auto w-full max-w-4xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            AI秘書 MVP
+    <main className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-emerald-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[960px] flex-col justify-center">
+        <section className="overflow-hidden rounded-[32px] border border-white/70 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.16)]">
+          <div className="border-b border-slate-100 bg-gradient-to-r from-sky-600 to-emerald-500 px-6 py-8 text-white sm:px-10 sm:py-10">
+            <p className="inline-flex rounded-full bg-white/20 px-4 py-2 text-sm font-bold backdrop-blur">
+              AI秘書 MVP
+            </p>
+            <h1 className="mt-5 text-4xl font-bold tracking-normal sm:text-6xl">
+              江端AI秘書
+            </h1>
+            <p className="mt-4 text-xl font-bold sm:text-2xl">
+              会議調整を、話しかけるだけで。
+            </p>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-sky-50">
+              Zoom予約・カレンダー登録・メール通知を自動化する準備中のMVPです。
+            </p>
           </div>
-          <h1 className="mt-6 text-4xl font-bold tracking-normal text-slate-950 sm:text-6xl">
-            江端AI秘書
-          </h1>
-          <p className="mt-4 text-xl font-bold leading-8 text-sky-800 sm:text-2xl">
-            会議調整を、話しかけるだけで。
-          </p>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-            Zoom予約・カレンダー登録・メール通知を自動化する準備中のMVPです。
-          </p>
-        </header>
 
-        <div className="mx-auto mt-9 w-full max-w-5xl rounded-[30px] border border-slate-200 bg-white p-3 shadow-[0_30px_100px_rgba(15,23,42,0.14)] sm:p-4">
-          <div className="rounded-[24px] border border-sky-100 bg-sky-50/40 p-4 sm:p-6 lg:p-8">
-            <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
-              <form
-                onSubmit={handleSubmit}
-                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+          <div className="grid gap-6 bg-white p-5 sm:p-8 lg:grid-cols-[1.05fr_0.95fr] lg:p-10">
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-6"
+            >
+              <div>
+                <p className="text-sm font-bold text-sky-700">自然文入力</p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-950">
+                  AI秘書に予定を伝える
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  いつものメッセージのように入力すると、会議情報を仮整理します。
+                </p>
+              </div>
+
+              <label className="mt-6 block">
+                <span className="mb-2 block text-sm font-bold text-slate-700">
+                  予定の内容
+                </span>
+                <textarea
+                  value={naturalInput}
+                  onChange={(event) => {
+                    setNaturalInput(event.target.value);
+                    setConfirmedDetails(null);
+                  }}
+                  placeholder={samplePrompt}
+                  className="min-h-[260px] w-full resize-y rounded-3xl border border-slate-200 bg-slate-50 px-5 py-5 text-base leading-8 text-slate-950 shadow-inner shadow-slate-200/70 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                />
+              </label>
+
+              <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4">
+                <p className="text-sm font-bold text-emerald-900">入力例</p>
+                <p className="mt-2 text-sm leading-7 text-emerald-900">
+                  {samplePrompt}
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={!hasInput}
+                className="mt-6 h-14 w-full rounded-2xl bg-gradient-to-r from-sky-600 to-emerald-500 px-6 text-base font-bold text-white shadow-lg shadow-sky-700/25 transition hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-sky-200 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none disabled:hover:translate-y-0"
               >
-                <div className="flex flex-col gap-3">
-                  <span className="w-fit rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">
-                    予定入力
-                  </span>
+                確認する
+              </button>
+            </form>
+
+            <aside className="space-y-6">
+              <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm sm:p-6">
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-950">
-                      自然文で予定を入力
+                    <p className="text-sm font-bold text-emerald-700">
+                      自動整理プレビュー
+                    </p>
+                    <h2 className="mt-2 text-2xl font-bold text-slate-950">
+                      仮抽出結果
+                    </h2>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-sky-700 shadow-sm">
+                    プレビュー
+                  </span>
+                </div>
+
+                <DetailsGrid details={extractedDetails} />
+              </section>
+
+              <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-950">
+                      確認画面
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                      いつものメッセージ感覚で、日時・相手・通知先をまとめて入力できます。
+                      確認するボタンを押すと、ここに内容が反映されます。
                     </p>
                   </div>
-                </div>
-
-                <label className="mt-6 block">
-                  <span className="mb-2 block text-sm font-bold text-slate-700">
-                    AI秘書への依頼内容
+                  <span
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
+                      confirmedDetails
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-slate-100 text-slate-500"
+                    }`}
+                  >
+                    {confirmedDetails ? "確認済み" : "未確認"}
                   </span>
-                  <textarea
-                    value={naturalInput}
-                    onChange={(event) => {
-                      setNaturalInput(event.target.value);
-                      setConfirmedDetails(null);
-                    }}
-                    placeholder={samplePrompt}
-                    className="min-h-60 w-full resize-y rounded-3xl border border-slate-200 bg-white px-5 py-5 text-base leading-8 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
-                  />
-                </label>
-
-                <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/80 px-4 py-4">
-                  <p className="text-sm font-bold text-emerald-900">入力例</p>
-                  <p className="mt-2 text-sm leading-7 text-emerald-900">
-                    {samplePrompt}
-                  </p>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={!hasInput}
-                className="mt-6 h-14 w-full rounded-2xl bg-sky-700 px-6 text-base font-bold text-white shadow-lg shadow-sky-700/25 transition hover:-translate-y-0.5 hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-sky-200 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none disabled:hover:translate-y-0"
-                >
-                  確認する
-                </button>
-              </form>
-
-              <aside className="space-y-6">
-                <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-                        自動整理プレビュー
-                      </span>
-                      <h2 className="mt-3 text-2xl font-bold text-slate-950">
-                        仮抽出結果
-                      </h2>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
-                        入力内容から、会議に必要な項目を整理します。
-                      </p>
-                    </div>
+                {confirmedDetails ? (
+                  <DetailsGrid details={confirmedDetails} compact />
+                ) : (
+                  <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-9 text-center">
+                    <p className="text-sm font-bold text-slate-700">
+                      まだ確認内容はありません
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      自然文を入力して「確認する」を押してください。
+                    </p>
                   </div>
-
-                  <DetailsGrid details={extractedDetails} />
-                </section>
-
-                <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-950">
-                        確認画面
-                      </h2>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
-                        「確認する」後に、確定前の内容を表示します。
-                      </p>
-                    </div>
-                    <span
-                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                        confirmedDetails
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-slate-100 text-slate-500"
-                      }`}
-                    >
-                      {confirmedDetails ? "確認済み" : "未確認"}
-                    </span>
-                  </div>
-
-                  {confirmedDetails ? (
-                    <DetailsGrid details={confirmedDetails} compact />
-                  ) : (
-                    <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
-                      <p className="text-sm font-bold text-slate-700">
-                        まだ確認内容はありません
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
-                        自然文を入力して「確認する」を押してください。
-                      </p>
-                    </div>
-                  )}
-                </section>
-              </aside>
-            </div>
+                )}
+              </section>
+            </aside>
           </div>
-        </div>
+        </section>
 
-        <section className="mx-auto mt-6 grid w-full max-w-5xl gap-4 pb-4 sm:grid-cols-3">
+        <section className="mt-6 grid gap-4 sm:grid-cols-3">
           {statusCards.map((card) => (
             <div
               key={card.title}
-              className={`rounded-3xl border p-5 shadow-sm ${card.accent}`}
+              className={`rounded-3xl border p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)] ${card.classes}`}
             >
-              <div className="flex items-center gap-3">
-                <span className={`h-3 w-3 rounded-full ${card.dot}`} />
-                <h3 className="text-base font-bold text-slate-950">
-                  {card.title}
-                </h3>
-              </div>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
+              <p className="text-base font-bold text-slate-950">{card.title}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
                 {card.description}
               </p>
-              <p className="mt-4 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">
+              <span className="mt-4 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">
                 API連携は準備中
-              </p>
+              </span>
             </div>
           ))}
         </section>
-      </section>
+      </div>
     </main>
   );
 }
@@ -269,24 +254,16 @@ function DetailsGrid({
   compact?: boolean;
 }) {
   return (
-    <dl
-      className={`mt-6 grid gap-3 ${
-        compact ? "sm:grid-cols-1" : "sm:grid-cols-2"
-      }`}
-    >
-      {detailLabels.map(([key, label, tone]) => (
+    <dl className={`mt-5 grid gap-3 ${compact ? "" : "sm:grid-cols-2"}`}>
+      {detailLabels.map(([key, label]) => (
         <div
           key={key}
-          className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-sky-200 hover:shadow-md ${
-            key === "memo" ? "sm:col-span-2" : ""
-          } ${compact ? "sm:col-span-1" : ""}`}
+          className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${
+            key === "memo" && !compact ? "sm:col-span-2" : ""
+          }`}
         >
-          <dt
-            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${tone}`}
-          >
-            {label}
-          </dt>
-          <dd className="mt-3 break-words text-sm font-semibold leading-6 text-slate-950">
+          <dt className="text-xs font-bold text-slate-500">{label}</dt>
+          <dd className="mt-2 break-words text-sm font-bold leading-6 text-slate-950">
             {details[key] || "未抽出"}
           </dd>
         </div>
