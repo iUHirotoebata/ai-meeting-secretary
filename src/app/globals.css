@@ -529,7 +529,8 @@ textarea {
 
 .zoom-ready-card dl {
   display: grid;
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
   margin: 16px 0 0;
 }
 
@@ -537,7 +538,8 @@ textarea {
   border: 1px solid #bbf7d0;
   border-radius: 14px;
   background: #ffffff;
-  padding: 12px;
+  min-height: 72px;
+  padding: 10px 12px;
 }
 
 .zoom-ready-card dt {
@@ -550,9 +552,15 @@ textarea {
   margin: 6px 0 0;
   color: #0f172a;
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.45;
   font-weight: 800;
-  word-break: break-word;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.zoom-ready-card dl div:first-child,
+.zoom-ready-card dl div:last-child {
+  grid-column: 1 / -1;
 }
 
 .empty-state {
@@ -682,5 +690,14 @@ textarea {
   .details-grid,
   .status-grid {
     grid-template-columns: 1fr;
+  }
+
+  .zoom-ready-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .zoom-ready-card dl div:first-child,
+  .zoom-ready-card dl div:last-child {
+    grid-column: auto;
   }
 }
