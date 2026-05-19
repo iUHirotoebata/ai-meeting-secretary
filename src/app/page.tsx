@@ -12,6 +12,13 @@ type MeetingDetails = {
   memo: string;
 };
 
+type ExtractionResult = {
+  details: MeetingDetails;
+  missingMessages: string[];
+  autoMessages: string[];
+  needsConfirmation: boolean;
+};
+
 const samplePrompt =
   "5月27日 11:00〜11:30、田中さんとZoom。メールは tanaka@example.com";
 
@@ -44,18 +51,55 @@ const statusCards = [
 ];
 
 function normalizeTime(value: string) {
-  const [hour, minute = "00"] = value.split(":");
+  const normalizedValue = value.replace("時", ":").replace("分", "");
+  const [hour, minute = "00"] = normalizedValue.split(":");
   return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
 }
 
-function extractMeetingDetails(input: string): MeetingDetails {
+function addOneHour(time: string) {
+  const [hour, minute] = time.split(":").map(Number);
+  return `${String((hour + 1) % 24).padStart(2, "0")}:${String(
+    minute,
+  ).padStart(2, "0")}`;
+}
+
+function extractTimes(input: string) {
+  const timePattern = String.raw`\d{1,2}(?::\d{2}|時(?:\d{1,2}分?)?)?`;
+  const rangeMatch = input.match(
+    new RegExp(`(${timePattern})\\s*(?:〜|~|-|から)\\s*(${timePattern})`),
+  );
+
+  if (rangeMatch) {
+    return {
+      startTime: normalizeTime(rangeMatch[1]),
+      endTime: normalizeTime(rangeMatch[2]),
+      autoCompletedEndTime: false,
+    };
+  }
+
+  const singleTimeMatch = input.match(/(\d{1,2}:\d{2}|\d{1,2}時(?:\d{1,2}分?)?)/);
+  if (singleTimeMatch) {
+    const startTime = normalizeTime(singleTimeMatch[1]);
+    return {
+      startTime,
+      endTime: addOneHour(startTime),
+      autoCompletedEndTime: true,
+    };
+  }
+
+  return {
+    startTime: "",
+    endTime: "",
+    autoCompletedEndTime: false,
+  };
+}
+
+function extractMeetingDetails(input: string): ExtractionResult {
   const email = input.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? "";
   const dateMatch =
     input.match(/(\d{1,2})月\s*(\d{1,2})日/) ??
     input.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
-  const timeMatch = input.match(
-    /(\d{1,2}:\d{2})\s*(?:〜|~|-|から)\s*(\d{1,2}:\d{2})/,
-  );
+  const extractedTimes = extractTimes(input);
   const guestMatch =
     input.match(/([一-龥ぁ-んァ-ヶーA-Za-z\s]{1,24})さん/) ??
     input.match(/([一-龥ぁ-んァ-ヶーA-Za-z\s]{1,24})(?:様|先生)/);
@@ -71,27 +115,63 @@ function extractMeetingDetails(input: string): MeetingDetails {
     }
   }
 
+  const isDateMissing = !date;
+  const isStartTimeMissing = !extractedTimes.startTime;
+  const missingMessages: string[] = [];
+  const autoMessages: string[] = [];
+
+  if (isDateMissing && isStartTimeMissing) {
+    missingMessages.push(
+      "日付と開始時間が入っていません。いつの予定か教えてください。",
+    );
+  } else {
+    if (isDateMissing) {
+      missingMessages.push("日付が入っていません。日付を入力してください。");
+    }
+
+    if (isStartTimeMissing) {
+      missingMessages.push(
+        "時間が入っていません。開始時間を入力してください。",
+      );
+    }
+  }
+
+  if (!email) {
+    missingMessages.push(
+      "相手メールは不明です。必要に応じて後で追加してください。",
+    );
+  }
+
+  if (extractedTimes.autoCompletedEndTime) {
+    autoMessages.push("終了時間は開始時間の1時間後に自動設定しました。");
+  }
+
   return {
-    title: guestName
-      ? `${guestName}さんとの${mentionsZoom ? "Zoom" : "会議"}`
-      : mentionsZoom
-        ? "Zoomミーティング"
-        : "",
-    date,
-    startTime: timeMatch ? normalizeTime(timeMatch[1]) : "",
-    endTime: timeMatch ? normalizeTime(timeMatch[2]) : "",
-    guestName,
-    guestEmail: email,
-    memo: input.trim(),
+    details: {
+      title: guestName
+        ? `${guestName}さんとの${mentionsZoom ? "Zoom" : "会議"}`
+        : mentionsZoom
+          ? "Zoomミーティング"
+          : "",
+      date: date || "日付が入っていません",
+      startTime: extractedTimes.startTime || "時間が入っていません",
+      endTime: extractedTimes.endTime || "時間が入っていません",
+      guestName,
+      guestEmail: email || "相手メールは不明",
+      memo: input.trim(),
+    },
+    missingMessages,
+    autoMessages,
+    needsConfirmation: isDateMissing || isStartTimeMissing,
   };
 }
 
 export default function Home() {
   const [naturalInput, setNaturalInput] = useState(samplePrompt);
-  const [confirmedDetails, setConfirmedDetails] =
-    useState<MeetingDetails | null>(null);
+  const [confirmedResult, setConfirmedResult] =
+    useState<ExtractionResult | null>(null);
 
-  const extractedDetails = useMemo(
+  const extractionResult = useMemo(
     () => extractMeetingDetails(naturalInput),
     [naturalInput],
   );
@@ -100,7 +180,7 @@ export default function Home() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setConfirmedDetails(extractedDetails);
+    setConfirmedResult(extractionResult);
   };
 
   return (
@@ -132,7 +212,7 @@ export default function Home() {
                   value={naturalInput}
                   onChange={(event) => {
                     setNaturalInput(event.target.value);
-                    setConfirmedDetails(null);
+                    setConfirmedResult(null);
                   }}
                   placeholder={samplePrompt}
                   className="natural-input"
@@ -163,7 +243,8 @@ export default function Home() {
                   <span className="preview-pill">プレビュー</span>
                 </div>
 
-                <DetailsGrid details={extractedDetails} />
+                <DetailsGrid details={extractionResult.details} />
+                <NoticePanels result={extractionResult} />
               </section>
 
               <section className="confirm-card">
@@ -174,17 +255,26 @@ export default function Home() {
                   </div>
                   <span
                     className={`state-pill ${
-                      confirmedDetails
-                        ? "state-pill-confirmed"
+                      confirmedResult
+                        ? confirmedResult.needsConfirmation
+                          ? "state-pill-warning"
+                          : "state-pill-confirmed"
                         : "state-pill-empty"
                     }`}
                   >
-                    {confirmedDetails ? "確認済み" : "未確認"}
+                    {confirmedResult
+                      ? confirmedResult.needsConfirmation
+                        ? "要確認"
+                        : "確認済み"
+                      : "未確認"}
                   </span>
                 </div>
 
-                {confirmedDetails ? (
-                  <DetailsGrid details={confirmedDetails} compact />
+                {confirmedResult ? (
+                  <>
+                    <DetailsGrid details={confirmedResult.details} compact />
+                    <NoticePanels result={confirmedResult} />
+                  </>
                 ) : (
                   <div className="empty-state">
                     <p>まだ確認内容はありません</p>
@@ -231,5 +321,37 @@ function DetailsGrid({
         </div>
       ))}
     </dl>
+  );
+}
+
+function NoticePanels({ result }: { result: ExtractionResult }) {
+  if (result.missingMessages.length === 0 && result.autoMessages.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="notice-stack">
+      {result.missingMessages.length > 0 ? (
+        <section className="notice-card notice-card-warning">
+          <h3>追加で確認したいこと</h3>
+          <ul>
+            {result.missingMessages.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {result.autoMessages.length > 0 ? (
+        <section className="notice-card notice-card-info">
+          <h3>自動補完したこと</h3>
+          <ul>
+            {result.autoMessages.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
   );
 }
