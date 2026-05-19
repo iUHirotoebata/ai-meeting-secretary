@@ -59,9 +59,19 @@ const statusCards = [
 ];
 
 function normalizeTime(value: string) {
-  const normalizedValue = value.replace("時", ":").replace("分", "");
+  const normalizedValue = normalizeInput(value)
+    .replace("時", ":")
+    .replace("分", "");
   const [hour, minute = "00"] = normalizedValue.split(":");
   return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
+}
+
+function normalizeInput(value: string) {
+  return value
+    .normalize("NFKC")
+    .replace(/[〜～]/g, "~")
+    .replace(/[‐‑‒–—―－]/g, "-")
+    .replace(/：/g, ":");
 }
 
 function addOneHour(time: string) {
@@ -110,16 +120,18 @@ function extractMeetingDetails(
   input: string,
   followUps: FollowUpInputs = {},
 ): ExtractionResult {
-  const email = input.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? "";
+  const normalizedInput = normalizeInput(input);
+  const email =
+    normalizedInput.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? "";
   const dateMatch =
-    input.match(/(\d{1,2})月\s*(\d{1,2})日/) ??
-    input.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
-  const extractedTimes = extractTimes(input);
+    normalizedInput.match(/(\d{1,2})月\s*(\d{1,2})日/) ??
+    normalizedInput.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+  const extractedTimes = extractTimes(normalizedInput);
   const guestMatch =
-    input.match(/([一-龥ぁ-んァ-ヶーA-Za-z\s]{1,24})さん/) ??
-    input.match(/([一-龥ぁ-んァ-ヶーA-Za-z\s]{1,24})(?:様|先生)/);
+    normalizedInput.match(/([一-龥ぁ-んァ-ヶーA-Za-z\s]{1,24})さん/) ??
+    normalizedInput.match(/([一-龥ぁ-んァ-ヶーA-Za-z\s]{1,24})(?:様|先生)/);
   const guestName = guestMatch?.[1]?.trim() ?? "";
-  const mentionsZoom = /zoom/i.test(input);
+  const mentionsZoom = /zoom/i.test(normalizedInput);
 
   let date = "";
   if (dateMatch) {
