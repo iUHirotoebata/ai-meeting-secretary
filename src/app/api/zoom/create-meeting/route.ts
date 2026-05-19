@@ -264,6 +264,8 @@ async function insertGoogleCalendarEvent({
   }
 
   try {
+    console.log("GOOGLE_CLIENT_ID prefix:", env.clientId.slice(0, 10));
+
     const oauth2Client = new google.auth.OAuth2(
       env.clientId,
       env.clientSecret,
