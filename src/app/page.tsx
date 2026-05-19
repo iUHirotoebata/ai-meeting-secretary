@@ -55,8 +55,9 @@ const statusCards = [
     tone: "status-card-blue",
   },
   {
-    title: "Google Calendar登録予定",
-    description: "日時と参加者をカレンダーへ登録する想定です。",
+    title: "カレンダー自動連携確認",
+    description:
+      "Zoom作成後、ceo@hirotoebata.jp の連携カレンダーへ自動反映される想定です。",
     tone: "status-card-green",
   },
   {
@@ -248,6 +249,10 @@ export default function Home() {
     hasConfirmed &&
     !extractionResult.isDateMissing &&
     !extractionResult.isStartTimeMissing;
+  const canConfirmCalendarSync =
+    !extractionResult.isDateMissing &&
+    !extractionResult.isStartTimeMissing &&
+    extractionResult.details.endTime !== "時間が入っていません";
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -386,6 +391,7 @@ export default function Home() {
                       isZoomReady={isZoomReady}
                       onCreateZoom={handleCreateZoomMeeting}
                     />
+                    <CalendarSyncPanel canConfirm={canConfirmCalendarSync} />
                     <NoticePanels
                       result={extractionResult}
                       values={followUpInputs}
@@ -498,6 +504,19 @@ function ZoomPreparationPanel({
           </dl>
         </div>
       ) : null}
+    </section>
+  );
+}
+
+function CalendarSyncPanel({ canConfirm }: { canConfirm: boolean }) {
+  return (
+    <section className="calendar-sync-card">
+      <h3>カレンダー連携確認</h3>
+      <p>
+        {canConfirm
+          ? "Zoom作成後、ceo@hirotoebata.jp の連携カレンダーへ自動反映される想定です。"
+          : "日付・開始時間・終了時間が不足しているため、カレンダー自動連携の確認ができません。"}
+      </p>
     </section>
   );
 }
