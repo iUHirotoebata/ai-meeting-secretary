@@ -299,20 +299,21 @@ textarea {
 
 .details-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 18px;
 }
 
 .details-grid-compact {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .detail-item {
   border: 1px solid #e2e8f0;
-  border-radius: 18px;
+  border-radius: 16px;
   background: #ffffff;
-  padding: 15px;
+  min-height: 70px;
+  padding: 11px 12px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
@@ -327,12 +328,13 @@ textarea {
 }
 
 .detail-item dd {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: #0f172a;
   font-size: 14px;
-  line-height: 1.65;
+  line-height: 1.45;
   font-weight: 800;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .notice-stack {
@@ -554,13 +556,8 @@ textarea {
   font-size: 14px;
   line-height: 1.45;
   font-weight: 800;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-}
-
-.zoom-ready-card dl div:first-child,
-.zoom-ready-card dl div:last-child {
-  grid-column: 1 / -1;
 }
 
 .empty-state {
@@ -688,16 +685,12 @@ textarea {
   }
 
   .details-grid,
+  .details-grid-compact,
   .status-grid {
     grid-template-columns: 1fr;
   }
 
   .zoom-ready-card dl {
     grid-template-columns: 1fr;
-  }
-
-  .zoom-ready-card dl div:first-child,
-  .zoom-ready-card dl div:last-child {
-    grid-column: auto;
   }
 }
