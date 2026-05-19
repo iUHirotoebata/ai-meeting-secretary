@@ -204,6 +204,31 @@ function getGoogleCalendarErrorMessage(error: unknown) {
   return sanitizeErrorText(details || "Google Calendar登録に失敗しました。");
 }
 
+function buildGoogleCalendarDescription({
+  topic,
+  startTimeIso,
+  joinUrl,
+  meetingId,
+  passcode,
+}: {
+  topic: string;
+  startTimeIso: string;
+  joinUrl: string;
+  meetingId: string;
+  passcode: string;
+}) {
+  return [
+    `会議タイトル: ${topic}`,
+    `日時: ${startTimeIso}`,
+    `Zoom URL: ${joinUrl || "未取得"}`,
+    "Google Calendar登録済みです。",
+    "",
+    `Zoom Join URL: ${joinUrl || "未取得"}`,
+    `Meeting ID: ${meetingId || "未取得"}`,
+    `Passcode: ${passcode || "未設定"}`,
+  ].join("\n");
+}
+
 async function getZoomAccessToken(
   env: NonNullable<ReturnType<typeof getZoomEnv>>,
 ) {
@@ -260,6 +285,8 @@ async function insertGoogleCalendarEvent({
       calendarSynced: false,
       calendarError: "Google Calendar環境変数が不足しています。",
       calendarEventLink: "",
+      invitationSent: false,
+      invitationError: "Google Calendar環境変数が不足しています。",
     };
   }
 
@@ -282,13 +309,16 @@ async function insertGoogleCalendarEvent({
 
     const event = await calendar.events.insert({
       calendarId: "primary",
+      sendUpdates: "all",
       requestBody: {
         summary: topic,
-        description: [
-          `Zoom Join URL: ${joinUrl || "未取得"}`,
-          `Meeting ID: ${meetingId || "未取得"}`,
-          `Passcode: ${passcode || "未設定"}`,
-        ].join("\n"),
+        description: buildGoogleCalendarDescription({
+          topic,
+          startTimeIso,
+          joinUrl,
+          meetingId,
+          passcode,
+        }),
         start: {
           dateTime: startTimeIso,
           timeZone: timezone,
@@ -305,14 +335,19 @@ async function insertGoogleCalendarEvent({
       calendarSynced: true,
       calendarError: "",
       calendarEventLink: event.data.htmlLink ?? "",
+      invitationSent: Boolean(guestEmail),
+      invitationError: guestEmail ? "" : "相手メールが不明です。",
     };
   } catch (error) {
     console.error("Google Calendar Error:", error);
+    const calendarError = getGoogleCalendarErrorMessage(error);
 
     return {
       calendarSynced: false,
-      calendarError: getGoogleCalendarErrorMessage(error),
+      calendarError,
       calendarEventLink: "",
+      invitationSent: false,
+      invitationError: calendarError,
     };
   }
 }
@@ -488,6 +523,8 @@ export async function POST(request: Request) {
       calendarSynced: calendarResult.calendarSynced,
       calendarEventLink: calendarResult.calendarEventLink,
       calendarError: calendarResult.calendarError,
+      invitationSent: calendarResult.invitationSent,
+      invitationError: calendarResult.invitationError,
     });
   } catch {
     return NextResponse.json(

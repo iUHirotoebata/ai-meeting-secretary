@@ -41,12 +41,18 @@ type ZoomCreateMeetingResponse = {
   calendarSynced?: boolean;
   calendarEventLink?: string;
   calendarError?: string;
+  invitationSent?: boolean;
+  invitationError?: string;
 };
 
 type CreatedZoomMeeting = NonNullable<ZoomCreateMeetingResponse["meeting"]>;
 type CalendarSyncResult = {
   synced: boolean;
   htmlLink: string;
+  error: string;
+};
+type InvitationResult = {
+  sent: boolean;
   error: string;
 };
 
@@ -261,6 +267,8 @@ export default function Home() {
     useState<CreatedZoomMeeting | null>(null);
   const [calendarSyncResult, setCalendarSyncResult] =
     useState<CalendarSyncResult | null>(null);
+  const [invitationResult, setInvitationResult] =
+    useState<InvitationResult | null>(null);
   const [isInvitationEmailReady, setIsInvitationEmailReady] = useState(false);
   const [hasInputChangedAfterConfirmation, setHasInputChangedAfterConfirmation] =
     useState(false);
@@ -290,6 +298,7 @@ export default function Home() {
     setZoomErrorMessage("");
     setCreatedZoomMeeting(null);
     setCalendarSyncResult(null);
+    setInvitationResult(null);
     setIsInvitationEmailReady(false);
     setHasInputChangedAfterConfirmation(false);
   };
@@ -301,6 +310,7 @@ export default function Home() {
     setZoomErrorMessage("");
     setCreatedZoomMeeting(null);
     setCalendarSyncResult(null);
+    setInvitationResult(null);
     setIsInvitationEmailReady(false);
   };
 
@@ -346,6 +356,7 @@ export default function Home() {
     setZoomErrorMessage("");
     setCreatedZoomMeeting(null);
     setCalendarSyncResult(null);
+    setInvitationResult(null);
     setIsInvitationEmailReady(false);
     setHasInputChangedAfterConfirmation(false);
   };
@@ -385,13 +396,18 @@ export default function Home() {
         htmlLink: data.calendarEventLink ?? "",
         error: data.calendarError ?? "",
       });
+      setInvitationResult({
+        sent: data.invitationSent ?? false,
+        error: data.invitationError ?? "",
+      });
       setIsZoomReady(true);
-      handlePrepareInvitationEmail();
+      handlePrepareInvitationEmail(data.invitationSent ?? false);
     } catch (error) {
       setIsZoomReady(false);
       setIsInvitationEmailReady(false);
       setCreatedZoomMeeting(null);
       setCalendarSyncResult(null);
+      setInvitationResult(null);
       setZoomErrorMessage(
         error instanceof Error
           ? error.message
@@ -402,8 +418,8 @@ export default function Home() {
     }
   };
 
-  const handlePrepareInvitationEmail = () => {
-    setIsInvitationEmailReady(!extractionResult.isEmailMissing);
+  const handlePrepareInvitationEmail = (sent: boolean) => {
+    setIsInvitationEmailReady(sent);
   };
 
   return (
@@ -523,6 +539,7 @@ export default function Home() {
               result={extractionResult}
               meeting={createdZoomMeeting}
               calendarSyncResult={calendarSyncResult}
+              invitationResult={invitationResult}
               canConfirmCalendarSync={canConfirmCalendarSync}
               isInvitationEmailReady={isInvitationEmailReady}
               onStartNewSchedule={handleStartNewSchedule}
@@ -634,6 +651,7 @@ function ExecutionSummarySection({
   result,
   meeting,
   calendarSyncResult,
+  invitationResult,
   canConfirmCalendarSync,
   isInvitationEmailReady,
   onStartNewSchedule,
@@ -641,6 +659,7 @@ function ExecutionSummarySection({
   result: ExtractionResult;
   meeting: CreatedZoomMeeting | null;
   calendarSyncResult: CalendarSyncResult | null;
+  invitationResult: InvitationResult | null;
   canConfirmCalendarSync: boolean;
   isInvitationEmailReady: boolean;
   onStartNewSchedule: () => void;
@@ -755,13 +774,15 @@ function ExecutionSummarySection({
             <h3>招待メール送信確認</h3>
             <span
               className={`execution-summary-state ${
-                result.isEmailMissing
+                result.isEmailMissing || invitationResult?.error
                   ? "execution-summary-state-warning"
                   : "execution-summary-state-ready"
               }`}
             >
               {result.isEmailMissing
                 ? "要確認"
+                : invitationResult?.sent
+                  ? "送信済み"
                 : isInvitationEmailReady
                   ? "準備OK"
                   : "待機中"}
@@ -772,6 +793,13 @@ function ExecutionSummarySection({
             <p className="execution-summary-warning">
               相手メールが不明のため、招待メール送信にはメールアドレスの追加が必要です。
             </p>
+          ) : invitationResult?.sent ? (
+            <p className="execution-summary-ready">招待メール送信済み</p>
+          ) : invitationResult?.error ? (
+            <div className="execution-summary-warning">
+              <p>招待メール送信に失敗しました。</p>
+              <small>{invitationResult.error}</small>
+            </div>
           ) : (
             <p className="execution-summary-ready">
               招待メール送信準備ができています。次のステップでメール送信APIに接続します。
