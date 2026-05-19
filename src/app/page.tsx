@@ -375,17 +375,17 @@ export default function Home() {
                 {hasConfirmed ? (
                   <>
                     <DetailsGrid details={extractionResult.details} compact />
-                    <NoticePanels
-                      result={extractionResult}
-                      values={followUpInputs}
-                      onChange={updateFollowUpInput}
-                      onApply={applyFollowUps}
-                    />
                     <ZoomPreparationPanel
                       result={extractionResult}
                       canCreateZoom={canCreateZoom}
                       isZoomReady={isZoomReady}
                       onCreateZoom={handleCreateZoomMeeting}
+                    />
+                    <NoticePanels
+                      result={extractionResult}
+                      values={followUpInputs}
+                      onChange={updateFollowUpInput}
+                      onApply={applyFollowUps}
                     />
                   </>
                 ) : (
@@ -461,9 +461,7 @@ function ZoomPreparationPanel({
 
       {!canCreateZoom ? (
         <p className="zoom-disabled-message">
-          日付と開始時間が必要です。
-          <br />
-          不足情報を入力してからZoom作成に進んでください。
+          日付と開始時間が必要です。不足情報を入力してからZoom作成に進んでください。
         </p>
       ) : null}
 
