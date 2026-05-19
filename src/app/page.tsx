@@ -38,7 +38,7 @@ const statusCards = [
   },
   {
     title: "メール通知予定",
-    description: "相手へ招待メールを送る想定です。",
+    description: "自分と相手へ招待メールを送る想定です。",
     tone: "status-card-teal",
   },
 ];
