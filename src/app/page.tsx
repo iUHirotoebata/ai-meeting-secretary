@@ -1,6 +1,47 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
+
+type SpeechRecognitionResultItem = {
+  transcript: string;
+};
+
+type SpeechRecognitionResultListItem = {
+  0: SpeechRecognitionResultItem;
+  length: number;
+};
+
+type SpeechRecognitionResultEvent = {
+  results: {
+    [index: number]: SpeechRecognitionResultListItem;
+    length: number;
+  };
+};
+
+type SpeechRecognitionErrorEvent = {
+  error: string;
+};
+
+type SpeechRecognitionInstance = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
+}
 
 type MeetingDetails = {
   title: string;
@@ -274,6 +315,10 @@ export default function Home() {
     useState(false);
   const [followUpInputs, setFollowUpInputs] = useState<FollowUpInputs>({});
   const [appliedFollowUps, setAppliedFollowUps] = useState<FollowUpInputs>({});
+  const [isListening, setIsListening] = useState(false);
+  const [speechStatusMessage, setSpeechStatusMessage] = useState("");
+  const [speechErrorMessage, setSpeechErrorMessage] = useState("");
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   const extractionResult = useMemo(
     () => extractMeetingDetails(naturalInput, appliedFollowUps),
@@ -327,12 +372,95 @@ export default function Home() {
     setAppliedFollowUps({});
   };
 
+  const appendSpeechText = (text: string) => {
+    const transcript = text.trim();
+
+    if (!transcript) {
+      return;
+    }
+
+    const shouldShowChangedMessage =
+      hasConfirmed || isZoomReady || isInvitationEmailReady;
+
+    setNaturalInput((current) =>
+      current.trim().length > 0 ? `${current}\n${transcript}` : transcript,
+    );
+    resetPreparationState();
+    setHasInputChangedAfterConfirmation(
+      (current) => current || shouldShowChangedMessage,
+    );
+    setFollowUpInputs({});
+    setAppliedFollowUps({});
+  };
+
+  const handleStartSpeechInput = () => {
+    setSpeechErrorMessage("");
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      setSpeechStatusMessage("");
+      return;
+    }
+
+    const SpeechRecognition =
+      window.SpeechRecognition ?? window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechErrorMessage(
+        "このブラウザは音声入力に対応していません。Chromeをご利用ください。",
+      );
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = "ja-JP";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setSpeechStatusMessage("聞き取り中です...");
+    };
+
+    recognition.onresult = (event) => {
+      let transcript = "";
+
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += event.results[index][0]?.transcript ?? "";
+      }
+
+      appendSpeechText(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      setSpeechStatusMessage("");
+      setSpeechErrorMessage(
+        event.error === "not-allowed" || event.error === "service-not-allowed"
+          ? "マイクの利用が許可されていません。ブラウザの設定をご確認ください。"
+          : "音声入力でエラーが発生しました。もう一度お試しください。",
+      );
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      setSpeechStatusMessage("");
+      recognitionRef.current = null;
+    };
+
+    recognition.start();
+  };
+
   const handleStartNewSchedule = () => {
     setNaturalInput("");
     resetPreparationState();
     setHasInputChangedAfterConfirmation(false);
     setFollowUpInputs({});
     setAppliedFollowUps({});
+    setSpeechStatusMessage("");
+    setSpeechErrorMessage("");
   };
 
   const updateFollowUpInput = (key: keyof FollowUpInputs, value: string) => {
@@ -445,9 +573,21 @@ export default function Home() {
                 </p>
               </div>
 
-              <label className="input-block">
-                <span>予定の内容</span>
+              <div className="input-block">
+                <div className="input-label-row">
+                  <label htmlFor="natural-input">予定の内容</label>
+                  <button
+                    type="button"
+                    className={`speech-input-button ${
+                      isListening ? "speech-input-button-listening" : ""
+                    }`}
+                    onClick={handleStartSpeechInput}
+                  >
+                    {isListening ? "🎙 聞き取り中..." : "🎤 音声入力"}
+                  </button>
+                </div>
                 <textarea
+                  id="natural-input"
                   value={naturalInput}
                   onChange={(event) =>
                     handleNaturalInputChange(event.target.value)
@@ -455,7 +595,16 @@ export default function Home() {
                   placeholder={samplePrompt}
                   className="natural-input"
                 />
-              </label>
+              </div>
+
+              <div className="speech-input-panel">
+                {speechStatusMessage ? (
+                  <p className="speech-status-message">{speechStatusMessage}</p>
+                ) : null}
+                {speechErrorMessage ? (
+                  <p className="speech-error-message">{speechErrorMessage}</p>
+                ) : null}
+              </div>
 
               <div className="example-box">
                 <p>入力例</p>
